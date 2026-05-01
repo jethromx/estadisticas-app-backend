@@ -1,0 +1,29 @@
+spring:
+  datasource:
+    url: jdbc:tc:postgresql:17-alpine:///lottery_test
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: test
+    password: test
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+lottery:
+  download:
+    timeout-seconds: 10
+    max-retries: 1
+    user-agent: "TestAgent/1.0"
+    charset: "UTF-8"
+  urls:
+    melate: "http://localhost/mock/melate.csv"
+    revancha: "http://localhost/mock/revancha.csv"
+    revanchita: "http://localhost/mock/revanchita.csv"
+    gana-gato: "http://localhost/mock/gana-gato.csv"
+
+logging:
+  level:
+    com.lottery: DEBUG
