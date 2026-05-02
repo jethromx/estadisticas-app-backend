@@ -1,9 +1,12 @@
 package com.lottery.api.domain.port.out;
 
+import com.lottery.api.domain.model.BalanceAnalysis;
 import com.lottery.api.domain.model.DueNumber;
 import com.lottery.api.domain.model.LotteryDraw;
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.domain.model.NumberFrequency;
+import com.lottery.api.domain.model.NumberPair;
+import com.lottery.api.domain.model.SumDistribution;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -67,4 +70,29 @@ public interface LotteryDrawRepositoryPort {
      * (sorteos transcurridos desde última aparición / intervalo promedio).
      */
     List<DueNumber> getDueNumbers(LotteryType type, int limit);
+
+    /**
+     * Frecuencia de cada número en los últimos {@code windowSize} sorteos.
+     */
+    List<NumberFrequency> getFrequenciesByDrawWindow(LotteryType type, int windowSize);
+
+    /**
+     * Número real de sorteos distintos dentro de la ventana {@code windowSize}.
+     */
+    long countDrawsInWindow(LotteryType type, int windowSize);
+
+    /**
+     * Distribución par/impar y alto/bajo de los sorteos históricos.
+     */
+    BalanceAnalysis getBalanceAnalysis(LotteryType type);
+
+    /**
+     * Histograma de sumas y estadísticas descriptivas de los sorteos históricos.
+     */
+    SumDistribution getSumDistribution(LotteryType type);
+
+    /**
+     * Pares de números que co-aparecen con más frecuencia en el mismo sorteo.
+     */
+    List<NumberPair> getPairFrequencies(LotteryType type, int limit);
 }

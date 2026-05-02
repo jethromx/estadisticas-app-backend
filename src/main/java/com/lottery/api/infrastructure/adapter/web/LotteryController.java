@@ -2,7 +2,6 @@ package com.lottery.api.infrastructure.adapter.web;
 
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.domain.port.in.*;
-import com.lottery.api.infrastructure.adapter.web.dto.response.DueNumberResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.*;
 import com.lottery.api.infrastructure.adapter.web.mapper.LotteryWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,13 +38,20 @@ import java.util.List;
 @Tag(name = "Lotería Nacional", description = "API para análisis estadístico de juegos de pronósticos")
 public class LotteryController {
 
-    private final SyncHistoricalDataUseCase    syncUseCase;
-    private final GetStatisticsUseCase         statisticsUseCase;
-    private final GetNumberFrequenciesUseCase  frequenciesUseCase;
-    private final GetHotNumbersUseCase         hotNumbersUseCase;
-    private final GetPatternSuggestionsUseCase patternSuggestionsUseCase;
-    private final GetDueNumbersUseCase         dueNumbersUseCase;
-    private final LotteryWebMapper             webMapper;
+    private final SyncHistoricalDataUseCase       syncUseCase;
+    private final GetStatisticsUseCase            statisticsUseCase;
+    private final GetNumberFrequenciesUseCase     frequenciesUseCase;
+    private final GetHotNumbersUseCase            hotNumbersUseCase;
+    private final GetPatternSuggestionsUseCase    patternSuggestionsUseCase;
+    private final GetDueNumbersUseCase            dueNumbersUseCase;
+    private final GetWindowedFrequenciesUseCase   windowedFrequenciesUseCase;
+    private final GetBalanceAnalysisUseCase       balanceAnalysisUseCase;
+    private final GetSumDistributionUseCase       sumDistributionUseCase;
+    private final GetPairAnalysisUseCase          pairAnalysisUseCase;
+    private final GetChiSquareUseCase             chiSquareUseCase;
+    private final GetBacktestUseCase              backtestUseCase;
+    private final GetBayesianAnalysisUseCase      bayesianAnalysisUseCase;
+    private final LotteryWebMapper                webMapper;
 
     // =========================================================================
     // Sincronización
@@ -219,6 +225,119 @@ public class LotteryController {
         return ResponseEntity.ok(
                 webMapper.toDueNumberResponseList(
                         dueNumbersUseCase.getDueNumbers(parseLotteryType(type), limit)));
+    }
+
+    // =========================================================================
+    // Ventana temporal
+    // =========================================================================
+
+    @GetMapping("/{type}/windowed-frequencies")
+    @Operation(summary = "Frecuencias en ventana temporal",
+               description = "Frecuencia de cada número en los últimos N sorteos, con indicador de tendencia vs histórico. " +
+                             "trend > 0 = aparece más que su promedio histórico; < 0 = menos.")
+    public ResponseEntity<List<WindowedFrequencyResponse>> getWindowedFrequencies(
+            @PathVariable String type,
+            @Parameter(description = "Tamaño de la ventana en sorteos (default 100)")
+            @RequestParam(defaultValue = "100") @Min(10) @Max(2000) int window) {
+        return ResponseEntity.ok(
+                webMapper.toWindowedFrequencyResponseList(
+                        windowedFrequenciesUseCase.getWindowedFrequencies(parseLotteryType(type), window)));
+    }
+
+    // =========================================================================
+    // Balance par/impar y alto/bajo
+    // =========================================================================
+
+    @GetMapping("/{type}/balance-analysis")
+    @Operation(summary = "Análisis de balance par/impar y alto/bajo",
+               description = "Distribución histórica del balance de números pares/impares y altos/bajos por sorteo, " +
+                             "con la combinación óptima observada.")
+    public ResponseEntity<BalanceAnalysisResponse> getBalanceAnalysis(
+            @PathVariable String type) {
+        return ResponseEntity.ok(
+                webMapper.toResponse(
+                        balanceAnalysisUseCase.getBalanceAnalysis(parseLotteryType(type))));
+    }
+
+    // =========================================================================
+    // Distribución de suma
+    // =========================================================================
+
+    @GetMapping("/{type}/sum-distribution")
+    @Operation(summary = "Distribución de la suma de números sorteados",
+               description = "Histograma de la suma de los números de cada sorteo, con media, desviación estándar " +
+                             "y rango óptimo recomendado para seleccionar combinaciones.")
+    public ResponseEntity<SumDistributionResponse> getSumDistribution(
+            @PathVariable String type) {
+        return ResponseEntity.ok(
+                webMapper.toResponse(
+                        sumDistributionUseCase.getSumDistribution(parseLotteryType(type))));
+    }
+
+    // =========================================================================
+    // Análisis de pares (co-ocurrencia)
+    // =========================================================================
+
+    @GetMapping("/{type}/pair-analysis")
+    @Operation(summary = "Análisis de co-ocurrencia de pares",
+               description = "Top-N pares de números que aparecen juntos con más frecuencia en el mismo sorteo.")
+    public ResponseEntity<List<NumberPairResponse>> getPairAnalysis(
+            @PathVariable String type,
+            @Parameter(description = "Cantidad de pares a retornar (default 20)")
+            @RequestParam(defaultValue = "20") @Min(5) @Max(200) int limit) {
+        return ResponseEntity.ok(
+                webMapper.toPairResponseList(
+                        pairAnalysisUseCase.getPairAnalysis(parseLotteryType(type), limit)));
+    }
+
+    // =========================================================================
+    // Chi-cuadrado (uniformidad de frecuencias)
+    // =========================================================================
+
+    @GetMapping("/{type}/chi-square")
+    @Operation(summary = "Test chi-cuadrado de uniformidad",
+               description = "Prueba si la distribución de frecuencias de los números difiere significativamente " +
+                             "de una distribución uniforme. p < 0.05 indica desviación estadísticamente significativa.")
+    public ResponseEntity<ChiSquareResponse> getChiSquare(@PathVariable String type) {
+        return ResponseEntity.ok(
+                webMapper.toResponse(chiSquareUseCase.getChiSquare(parseLotteryType(type))));
+    }
+
+    // =========================================================================
+    // Backtesting
+    // =========================================================================
+
+    @GetMapping("/{type}/backtest")
+    @Operation(summary = "Backtesting de la estrategia de números calientes",
+               description = "Evalúa cuántos números acertarías históricamente si siempre apostaras a los " +
+                             "topK números más frecuentes. Incluye comparativa con una selección aleatoria.")
+    public ResponseEntity<BacktestResponse> getBacktest(
+            @PathVariable String type,
+            @Parameter(description = "Cantidad de números a predecir (default = números por sorteo del juego)")
+            @RequestParam(required = false) @Min(1) @Max(56) Integer topK,
+            @Parameter(description = "Sorteos recientes a usar como conjunto de prueba (default 100)")
+            @RequestParam(defaultValue = "100") @Min(10) @Max(2000) int testDraws) {
+        LotteryType lotteryType = parseLotteryType(type);
+        int k = topK != null ? topK : lotteryType.getNumbersCount();
+        return ResponseEntity.ok(webMapper.toResponse(backtestUseCase.getBacktest(lotteryType, k, testDraws)));
+    }
+
+    // =========================================================================
+    // Análisis bayesiano
+    // =========================================================================
+
+    @GetMapping("/{type}/bayesian-analysis")
+    @Operation(summary = "Análisis bayesiano de números",
+               description = "Combina la frecuencia histórica (prior) con la frecuencia reciente (likelihood) " +
+                             "para obtener una probabilidad posterior Beta-Binomial por número. " +
+                             "lift > 0 = el número aparece más de lo esperado en la ventana reciente.")
+    public ResponseEntity<List<BayesianNumberResponse>> getBayesianAnalysis(
+            @PathVariable String type,
+            @Parameter(description = "Tamaño de la ventana reciente en sorteos (default 50)")
+            @RequestParam(defaultValue = "50") @Min(10) @Max(500) int recentWindow) {
+        return ResponseEntity.ok(
+                webMapper.toBayesianResponseList(
+                        bayesianAnalysisUseCase.getBayesianAnalysis(parseLotteryType(type), recentWindow)));
     }
 
     // =========================================================================

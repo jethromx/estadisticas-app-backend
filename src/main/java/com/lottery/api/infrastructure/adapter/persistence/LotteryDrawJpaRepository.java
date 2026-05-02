@@ -2,8 +2,12 @@ package com.lottery.api.infrastructure.adapter.persistence;
 
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.infrastructure.adapter.persistence.entity.LotteryDrawEntity;
+import com.lottery.api.infrastructure.adapter.persistence.projection.BalanceProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.DueNumberProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.NumberFrequencyProjection;
+import com.lottery.api.infrastructure.adapter.persistence.projection.PairFrequencyProjection;
+import com.lottery.api.infrastructure.adapter.persistence.projection.SumHistogramProjection;
+import com.lottery.api.infrastructure.adapter.persistence.projection.SumStatsProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -151,6 +155,195 @@ public interface LotteryDrawJpaRepository extends JpaRepository<LotteryDrawEntit
         LIMIT :limit
         """, nativeQuery = true)
     List<DueNumberProjection> findDueNumbers(
+            @Param("type") String type,
+            @Param("limit") int limit);
+
+    /**
+     * Frecuencia de cada número en los últimos {@code windowSize} sorteos del tipo dado.
+     * Reusa la misma proyección que la query histórica para compatibilidad con el mapper.
+     */
+    @Query(value = """
+        WITH bounds AS (
+            SELECT MAX(draw_number) AS max_draw
+            FROM lottery_draws WHERE lottery_type = :type
+        ),
+        window_count AS (
+            SELECT COUNT(DISTINCT draw_number) AS cnt
+            FROM lottery_draws, bounds
+            WHERE lottery_type = :type AND draw_number > (bounds.max_draw - :windowSize)
+        ),
+        nums AS (
+            SELECT draw_number, draw_date, number_1 AS n
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_1 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_2
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_2 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_3
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_3 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_4
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_4 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_5
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_5 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_6
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_6 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_7
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_7 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+            UNION ALL
+            SELECT draw_number, draw_date, number_8
+              FROM lottery_draws, bounds
+             WHERE lottery_type = :type AND number_8 IS NOT NULL
+               AND draw_number > (bounds.max_draw - :windowSize)
+        )
+        SELECT
+            n                                                                  AS number,
+            COUNT(*)::bigint                                                   AS frequency,
+            ROUND(COUNT(*) * 100.0 / NULLIF((SELECT cnt FROM window_count), 0), 2) AS percentage,
+            MAX(draw_date)                                                     AS lastDrawnDate,
+            MAX(draw_number)::integer                                          AS lastDrawNumber
+        FROM nums
+        GROUP BY n
+        ORDER BY n
+        """, nativeQuery = true)
+    List<NumberFrequencyProjection> findFrequenciesInWindow(
+            @Param("type") String type,
+            @Param("windowSize") int windowSize);
+
+    /**
+     * Devuelve el número real de sorteos distintos en los últimos {@code windowSize} draw_numbers.
+     */
+    @Query(value = """
+        WITH bounds AS (SELECT MAX(draw_number) AS max_draw FROM lottery_draws WHERE lottery_type = :type)
+        SELECT COUNT(DISTINCT draw_number)
+        FROM lottery_draws, bounds
+        WHERE lottery_type = :type AND draw_number > (bounds.max_draw - :windowSize)
+        """, nativeQuery = true)
+    long countDrawsInWindow(
+            @Param("type") String type,
+            @Param("windowSize") int windowSize);
+
+    /**
+     * Distribución de balance par/impar y alto/bajo por sorteo.
+     * Agrupa por (odd_count, high_count) y retorna cuántos sorteos tienen esa combinación.
+     */
+    @Query(value = """
+        WITH draw_analysis AS (
+            SELECT
+                draw_number,
+                SUM(CASE WHEN MOD(n, 2) != 0 THEN 1 ELSE 0 END)::integer AS odd_count,
+                SUM(CASE WHEN n > :midpoint THEN 1 ELSE 0 END)::integer AS high_count
+            FROM (
+                SELECT draw_number, number_1 AS n FROM lottery_draws WHERE lottery_type = :type AND number_1 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_2 FROM lottery_draws WHERE lottery_type = :type AND number_2 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_3 FROM lottery_draws WHERE lottery_type = :type AND number_3 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_4 FROM lottery_draws WHERE lottery_type = :type AND number_4 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_5 FROM lottery_draws WHERE lottery_type = :type AND number_5 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_6 FROM lottery_draws WHERE lottery_type = :type AND number_6 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_7 FROM lottery_draws WHERE lottery_type = :type AND number_7 IS NOT NULL
+                UNION ALL
+                SELECT draw_number, number_8 FROM lottery_draws WHERE lottery_type = :type AND number_8 IS NOT NULL
+            ) nums
+            GROUP BY draw_number
+        )
+        SELECT odd_count AS oddCount, high_count AS highCount, COUNT(*) AS drawCount
+        FROM draw_analysis
+        GROUP BY odd_count, high_count
+        ORDER BY COUNT(*) DESC
+        """, nativeQuery = true)
+    List<BalanceProjection> findBalanceDistribution(
+            @Param("type") String type,
+            @Param("midpoint") int midpoint);
+
+    /**
+     * Histograma de la suma de los números principales por sorteo.
+     */
+    @Query(value = """
+        SELECT
+            (COALESCE(number_1,0) + COALESCE(number_2,0) + COALESCE(number_3,0)
+             + COALESCE(number_4,0) + COALESCE(number_5,0) + COALESCE(number_6,0)
+             + COALESCE(number_7,0) + COALESCE(number_8,0)) AS sumValue,
+            COUNT(*) AS frequency
+        FROM lottery_draws
+        WHERE lottery_type = :type AND number_1 IS NOT NULL
+        GROUP BY sumValue
+        ORDER BY sumValue
+        """, nativeQuery = true)
+    List<SumHistogramProjection> findSumHistogram(@Param("type") String type);
+
+    /**
+     * Estadísticas descriptivas (media, desviación estándar, percentiles) de las sumas.
+     */
+    @Query(value = """
+        WITH sums AS (
+            SELECT (COALESCE(number_1,0) + COALESCE(number_2,0) + COALESCE(number_3,0)
+                    + COALESCE(number_4,0) + COALESCE(number_5,0) + COALESCE(number_6,0)
+                    + COALESCE(number_7,0) + COALESCE(number_8,0)) AS s
+            FROM lottery_draws
+            WHERE lottery_type = :type AND number_1 IS NOT NULL
+        )
+        SELECT
+            ROUND(AVG(s)::numeric, 2)                                       AS mean,
+            ROUND(STDDEV(s)::numeric, 2)                                    AS stdDev,
+            MIN(s)::integer                                                  AS minSum,
+            MAX(s)::integer                                                  AS maxSum,
+            PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY s)                 AS p25,
+            PERCENTILE_CONT(0.50) WITHIN GROUP (ORDER BY s)                 AS p50,
+            PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY s)                 AS p75,
+            COUNT(*)::bigint                                                 AS totalDraws
+        FROM sums
+        """, nativeQuery = true)
+    SumStatsProjection findSumStats(@Param("type") String type);
+
+    /**
+     * Top-N pares de números que co-aparecen con más frecuencia en el mismo sorteo.
+     * Usa LATERAL UNNEST para generar todos los pares (a < b) de cada sorteo.
+     */
+    @Query(value = """
+        WITH nums AS (
+            SELECT draw_number,
+                   ARRAY_REMOVE(ARRAY[number_1, number_2, number_3, number_4,
+                                      number_5, number_6, number_7, number_8], NULL) AS numbers
+            FROM lottery_draws
+            WHERE lottery_type = :type
+        ),
+        pairs AS (
+            SELECT a.num AS number1, b.num AS number2
+            FROM nums n,
+                 LATERAL UNNEST(n.numbers) AS a(num),
+                 LATERAL UNNEST(n.numbers) AS b(num)
+            WHERE a.num < b.num
+        )
+        SELECT number1, number2, COUNT(*)::bigint AS frequency
+        FROM pairs
+        GROUP BY number1, number2
+        ORDER BY frequency DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<PairFrequencyProjection> findTopPairs(
             @Param("type") String type,
             @Param("limit") int limit);
 }
