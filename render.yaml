@@ -5,6 +5,8 @@ services:
     plan: free
     healthCheckPath: /actuator/health
     envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: production
       - key: DB_HOST
         fromDatabase:
           name: estadisticas-db
