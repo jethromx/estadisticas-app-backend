@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: estadisticas-app-backend
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: estadisticas-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: estadisticas-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: estadisticas-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: estadisticas-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: estadisticas-db
+          property: password
+      - key: ALLOWED_ORIGINS
+        value: https://estadisticas-app.vercel.app
+
+databases:
+  - name: estadisticas-db
+    plan: free
+    databaseName: lottery_db
+    user: lottery_user

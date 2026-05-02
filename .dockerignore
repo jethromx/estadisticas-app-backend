@@ -1,0 +1,10 @@
+.gradle/
+build/
+.idea/
+.vscode/
+.claude/
+.git/
+*.md
+.env
+.env.example
+bin/
