@@ -2,6 +2,7 @@ package com.lottery.api.infrastructure.adapter.persistence;
 
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.infrastructure.adapter.persistence.entity.LotteryDrawEntity;
+import com.lottery.api.infrastructure.adapter.persistence.projection.DueNumberProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.NumberFrequencyProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -101,4 +102,55 @@ public interface LotteryDrawJpaRepository extends JpaRepository<LotteryDrawEntit
             @Param("type") String type,
             @Param("from") LocalDate from,
             @Param("to") LocalDate to);
+
+    /**
+     * Calcula el "due score" de cada número: sorteos transcurridos desde su última
+     * aparición dividido entre su intervalo promedio de aparición.
+     * Un valor > 1.0 indica que el número ya superó su intervalo histórico.
+     */
+    @Query(value = """
+        WITH all_numbers AS (
+            SELECT draw_number, number_1 AS num FROM lottery_draws WHERE lottery_type = :type AND number_1 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_2 FROM lottery_draws WHERE lottery_type = :type AND number_2 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_3 FROM lottery_draws WHERE lottery_type = :type AND number_3 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_4 FROM lottery_draws WHERE lottery_type = :type AND number_4 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_5 FROM lottery_draws WHERE lottery_type = :type AND number_5 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_6 FROM lottery_draws WHERE lottery_type = :type AND number_6 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_7 FROM lottery_draws WHERE lottery_type = :type AND number_7 IS NOT NULL
+            UNION ALL
+            SELECT draw_number, number_8 FROM lottery_draws WHERE lottery_type = :type AND number_8 IS NOT NULL
+        ),
+        totals AS (
+            SELECT MAX(draw_number)            AS max_draw,
+                   COUNT(DISTINCT draw_number) AS total_draws
+            FROM lottery_draws WHERE lottery_type = :type
+        ),
+        stats AS (
+            SELECT num                  AS number,
+                   COUNT(*)             AS frequency,
+                   MAX(draw_number)     AS last_draw_number
+            FROM all_numbers
+            GROUP BY num
+        )
+        SELECT s.number,
+               s.frequency,
+               s.last_draw_number,
+               t.max_draw - s.last_draw_number                                            AS draws_since_last,
+               ROUND(CAST(t.total_draws AS numeric) / s.frequency, 2)                    AS avg_interval,
+               ROUND(CAST(t.max_draw - s.last_draw_number AS numeric)
+                     / NULLIF(CAST(t.total_draws AS numeric) / s.frequency, 0), 2)       AS due_score
+        FROM stats s
+        CROSS JOIN totals t
+        ORDER BY due_score DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<DueNumberProjection> findDueNumbers(
+            @Param("type") String type,
+            @Param("limit") int limit);
 }

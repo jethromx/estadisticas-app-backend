@@ -1,5 +1,6 @@
 package com.lottery.api.infrastructure.adapter.persistence;
 
+import com.lottery.api.domain.model.DueNumber;
 import com.lottery.api.domain.model.LotteryDraw;
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.domain.model.NumberFrequency;
@@ -97,6 +98,20 @@ public class LotteryDrawRepositoryAdapter implements LotteryDrawRepositoryPort {
     @Override
     public Set<Integer> findAllDrawNumbersByType(LotteryType type) {
         return jpaRepository.findAllDrawNumbersByType(type);
+    }
+
+    @Override
+    public List<DueNumber> getDueNumbers(LotteryType type, int limit) {
+        return jpaRepository.findDueNumbers(type.name(), limit).stream()
+                .map(p -> DueNumber.builder()
+                        .number(p.getNumber())
+                        .frequency(p.getFrequency())
+                        .lastDrawNumber(p.getLastDrawNumber())
+                        .drawsSinceLast(p.getDrawsSinceLast())
+                        .avgInterval(p.getAvgInterval())
+                        .dueScore(p.getDueScore())
+                        .build())
+                .toList();
     }
 
     private List<NumberFrequency> getNumberFrequenciesInRange(LotteryType type, LocalDate from, LocalDate to) {

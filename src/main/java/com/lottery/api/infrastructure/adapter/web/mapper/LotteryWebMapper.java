@@ -1,9 +1,11 @@
 package com.lottery.api.infrastructure.adapter.web.mapper;
 
+import com.lottery.api.domain.model.DueNumber;
 import com.lottery.api.domain.model.LotteryStatistics;
 import com.lottery.api.domain.model.NumberFrequency;
 import com.lottery.api.domain.model.PatternSuggestion;
 import com.lottery.api.domain.model.SyncResult;
+import com.lottery.api.infrastructure.adapter.web.dto.response.DueNumberResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.NumberFrequencyResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.PatternSuggestionResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.StatisticsResponse;
@@ -30,7 +32,10 @@ public interface LotteryWebMapper {
     @Mapping(target = "lotteryType", expression = "java(suggestion.getLotteryType().name())")
     PatternSuggestionResponse toResponse(PatternSuggestion suggestion);
 
-    List<SyncResultResponse>      toSyncResponseList(List<SyncResult> results);
-    List<NumberFrequencyResponse> toFrequencyResponseList(List<NumberFrequency> list);
+    DueNumberResponse toResponse(DueNumber dueNumber);
+
+    List<SyncResultResponse>        toSyncResponseList(List<SyncResult> results);
+    List<NumberFrequencyResponse>   toFrequencyResponseList(List<NumberFrequency> list);
     List<PatternSuggestionResponse> toPatternResponseList(List<PatternSuggestion> list);
+    List<DueNumberResponse>         toDueNumberResponseList(List<DueNumber> list);
 }

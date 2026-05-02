@@ -1,5 +1,6 @@
 package com.lottery.api.domain.port.out;
 
+import com.lottery.api.domain.model.DueNumber;
 import com.lottery.api.domain.model.LotteryDraw;
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.domain.model.NumberFrequency;
@@ -60,4 +61,10 @@ public interface LotteryDrawRepositoryPort {
     boolean existsByTypeAndDrawNumber(LotteryType type, Integer drawNumber);
 
     Set<Integer> findAllDrawNumbersByType(LotteryType type);
+
+    /**
+     * Devuelve los {@code limit} números con mayor {@code dueScore}
+     * (sorteos transcurridos desde última aparición / intervalo promedio).
+     */
+    List<DueNumber> getDueNumbers(LotteryType type, int limit);
 }

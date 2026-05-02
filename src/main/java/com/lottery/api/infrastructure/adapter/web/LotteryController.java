@@ -2,6 +2,7 @@ package com.lottery.api.infrastructure.adapter.web;
 
 import com.lottery.api.domain.model.LotteryType;
 import com.lottery.api.domain.port.in.*;
+import com.lottery.api.infrastructure.adapter.web.dto.response.DueNumberResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.*;
 import com.lottery.api.infrastructure.adapter.web.mapper.LotteryWebMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -38,12 +39,13 @@ import java.util.List;
 @Tag(name = "Lotería Nacional", description = "API para análisis estadístico de juegos de pronósticos")
 public class LotteryController {
 
-    private final SyncHistoricalDataUseCase syncUseCase;
-    private final GetStatisticsUseCase statisticsUseCase;
-    private final GetNumberFrequenciesUseCase frequenciesUseCase;
-    private final GetHotNumbersUseCase hotNumbersUseCase;
+    private final SyncHistoricalDataUseCase    syncUseCase;
+    private final GetStatisticsUseCase         statisticsUseCase;
+    private final GetNumberFrequenciesUseCase  frequenciesUseCase;
+    private final GetHotNumbersUseCase         hotNumbersUseCase;
     private final GetPatternSuggestionsUseCase patternSuggestionsUseCase;
-    private final LotteryWebMapper webMapper;
+    private final GetDueNumbersUseCase         dueNumbersUseCase;
+    private final LotteryWebMapper             webMapper;
 
     // =========================================================================
     // Sincronización
@@ -200,6 +202,23 @@ public class LotteryController {
                 webMapper.toResponse(
                         patternSuggestionsUseCase.getSuggestionByMethodology(
                                 parseLotteryType(type), methodology)));
+    }
+
+    // =========================================================================
+    // Números pendientes
+    // =========================================================================
+
+    @GetMapping("/{type}/due-numbers")
+    @Operation(summary = "Números pendientes de salir",
+               description = "Top N números cuyo intervalo desde última aparición supera su promedio histórico. " +
+                             "dueScore = sorteosSinSalir / intervaloPromedio. Mayor score = más pendiente.")
+    public ResponseEntity<List<DueNumberResponse>> getDueNumbers(
+            @PathVariable String type,
+            @Parameter(description = "Cantidad de resultados (default 10)")
+            @RequestParam(defaultValue = "10") @Min(1) @Max(56) int limit) {
+        return ResponseEntity.ok(
+                webMapper.toDueNumberResponseList(
+                        dueNumbersUseCase.getDueNumbers(parseLotteryType(type), limit)));
     }
 
     // =========================================================================
