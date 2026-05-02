@@ -3,8 +3,11 @@ package com.lottery.api.infrastructure.config;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -13,16 +16,24 @@ public class CorsConfig {
     private String allowedOrigins;
 
     @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/api/**")
-                        .allowedOriginPatterns(allowedOrigins)
-                        .allowedMethods("GET", "POST")
-                        .allowedHeaders("*")
-                        .maxAge(3600);
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        config.setAllowCredentials(false);
+
+        if ("*".equals(allowedOrigins.trim())) {
+            config.addAllowedOriginPattern("*");
+        } else {
+            for (String origin : allowedOrigins.split(",")) {
+                config.addAllowedOriginPattern(origin.trim());
             }
-        };
+        }
+
+        config.addAllowedHeader("*");
+        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", config);
+        return new CorsFilter(source);
     }
 }
