@@ -4,10 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lottery.api.domain.model.User;
 import com.lottery.api.domain.port.in.CreateUserUseCase;
+import com.lottery.api.domain.port.in.DeleteUserUseCase;
 import com.lottery.api.domain.port.in.GetAdminMetricsUseCase;
 import com.lottery.api.domain.port.in.GetAllUsersUseCase;
+import com.lottery.api.domain.port.in.UpdateUserUseCase;
 import com.lottery.api.domain.port.out.SavedPredictionRepositoryPort;
 import com.lottery.api.infrastructure.adapter.web.dto.request.CreateUserRequest;
+import com.lottery.api.infrastructure.adapter.web.dto.request.UpdateUserRequest;
 import com.lottery.api.infrastructure.adapter.web.dto.response.AdminMetricsResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.AdminUserResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.SavedPredictionResponse;
@@ -36,6 +39,8 @@ public class AdminController {
 
     private final GetAllUsersUseCase getAllUsersUseCase;
     private final CreateUserUseCase createUserUseCase;
+    private final UpdateUserUseCase updateUserUseCase;
+    private final DeleteUserUseCase deleteUserUseCase;
     private final GetAdminMetricsUseCase getAdminMetricsUseCase;
     private final SavedPredictionRepositoryPort savedPredictionRepositoryPort;
     private final ObjectMapper objectMapper;
@@ -59,6 +64,29 @@ public class AdminController {
                 user.getId(), user.getUsername(), user.getEmail(),
                 user.getRole().name(), user.isActive(), user.getCreatedAt());
         return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+    }
+
+    @Operation(summary = "Actualizar usuario")
+    @PutMapping("/users/{id}")
+    public ResponseEntity<AdminUserResponse> updateUser(@PathVariable String id, @RequestBody @Valid UpdateUserRequest req) {
+        log.info("PUT /admin/users/{} - updating user", id);
+        log.info("Request: username={}, email={}, role={}, active={}", req.username(), req.email(), req.role(), req.active());
+        
+        User user = updateUserUseCase.execute(id, req.username(), req.email(), req.role(), req.active());
+        
+        AdminUserResponse resp = new AdminUserResponse(
+                user.getId(), user.getUsername(), user.getEmail(),
+                user.getRole().name(), user.isActive(), user.getCreatedAt());
+        
+        log.info("Successfully updated user: {}", user.getUsername());
+        return ResponseEntity.ok(resp);
+    }
+
+    @Operation(summary = "Eliminar usuario")
+    @DeleteMapping("/users/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        deleteUserUseCase.execute(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Operation(summary = "Métricas de uso de la plataforma")
