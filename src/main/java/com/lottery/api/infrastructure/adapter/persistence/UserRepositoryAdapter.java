@@ -45,6 +45,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         return jpaRepository.findAll().stream().map(this::toDomain).toList();
     }
 
+    @Override
+    public void deleteById(String id) {
+        jpaRepository.deleteById(id);
+    }
+
     private UserEntity toEntity(User u) {
         return UserEntity.builder()
                 .id(u.getId())
