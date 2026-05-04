@@ -18,6 +18,7 @@ public class SavedPrediction {
     private LocalDateTime savedAt;
     private LocalDate latestDrawDate;
     private String combosJson;
-    /** Nullable — reserved for per-user support. */
+    private LotteryType lotteryType;
+    private String generationParamsJson;
     private String userId;
 }

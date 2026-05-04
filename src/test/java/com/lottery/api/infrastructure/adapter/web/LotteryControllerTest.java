@@ -5,12 +5,15 @@ import com.lottery.api.domain.model.*;
 import com.lottery.api.domain.port.in.*;
 import com.lottery.api.infrastructure.adapter.web.mapper.LotteryWebMapper;
 import com.lottery.api.infrastructure.adapter.web.dto.response.*;
+import com.lottery.api.infrastructure.config.security.JwtService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -20,21 +23,42 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(LotteryController.class)
 @DisplayName("LotteryController — Tests Web")
+@WithMockUser
+@TestPropertySource(properties = {
+    "app.jwt.secret=test-secret-key-minimum-32-characters-long",
+    "app.jwt.expiry-ms=86400000"
+})
 class LotteryControllerTest {
 
     @Autowired private MockMvc mockMvc;
 
+    // LotteryController dependencies
     @MockBean private SyncHistoricalDataUseCase syncUseCase;
     @MockBean private GetStatisticsUseCase statisticsUseCase;
     @MockBean private GetNumberFrequenciesUseCase frequenciesUseCase;
     @MockBean private GetHotNumbersUseCase hotNumbersUseCase;
     @MockBean private GetPatternSuggestionsUseCase patternSuggestionsUseCase;
+    @MockBean private GetDueNumbersUseCase dueNumbersUseCase;
+    @MockBean private GetWindowedFrequenciesUseCase windowedFrequenciesUseCase;
+    @MockBean private GetBalanceAnalysisUseCase balanceAnalysisUseCase;
+    @MockBean private GetSumDistributionUseCase sumDistributionUseCase;
+    @MockBean private GetPairAnalysisUseCase pairAnalysisUseCase;
+    @MockBean private GetChiSquareUseCase chiSquareUseCase;
+    @MockBean private GetBacktestUseCase backtestUseCase;
+    @MockBean private GetBayesianAnalysisUseCase bayesianAnalysisUseCase;
+    @MockBean private GetDrawResultsUseCase drawResultsUseCase;
     @MockBean private LotteryWebMapper webMapper;
+    // Security: mock dependencies of filters, not the filters themselves
+    // (mocking filters stops chain.doFilter() from being called)
+    @MockBean private JwtService jwtService;
+    @MockBean private com.lottery.api.domain.port.out.UserActivityRepositoryPort userActivityRepositoryPort;
+    @MockBean private com.lottery.api.infrastructure.config.security.UserDetailsServiceAdapter userDetailsServiceAdapter;
 
     // ---- helpers ----
     private SyncResultResponse syncResponse(String status) {
@@ -60,7 +84,7 @@ class LotteryControllerTest {
                 .thenReturn(SyncResult.builder().lotteryType(LotteryType.MELATE).status("SUCCESS").build());
         when(webMapper.toResponse(any(SyncResult.class))).thenReturn(syncResponse("SUCCESS"));
 
-        mockMvc.perform(post("/api/v1/lottery/MELATE/sync"))
+        mockMvc.perform(post("/api/v1/lottery/MELATE/sync").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("SUCCESS"))
                 .andExpect(jsonPath("$.lotteryType").value("MELATE"));
@@ -69,7 +93,7 @@ class LotteryControllerTest {
     @Test
     @DisplayName("POST /sync con tipo inválido devuelve 400")
     void syncHistoricalData_invalidType_returns400() throws Exception {
-        mockMvc.perform(post("/api/v1/lottery/INVALID/sync"))
+        mockMvc.perform(post("/api/v1/lottery/INVALID/sync").with(csrf()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -79,7 +103,7 @@ class LotteryControllerTest {
         when(syncUseCase.syncAllHistoricalData()).thenReturn(List.of());
         when(webMapper.toSyncResponseList(any())).thenReturn(List.of(syncResponse("SUCCESS")));
 
-        mockMvc.perform(post("/api/v1/lottery/sync/all"))
+        mockMvc.perform(post("/api/v1/lottery/sync/all").with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].status").value("SUCCESS"));
     }

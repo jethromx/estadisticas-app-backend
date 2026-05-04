@@ -1,7 +1,10 @@
 package com.lottery.api.infrastructure.adapter.persistence.entity;
 
+import com.lottery.api.domain.model.LotteryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -39,7 +42,13 @@ public class SavedPredictionEntity {
     @Column(name = "combos_json", columnDefinition = "TEXT", nullable = false)
     private String combosJson;
 
-    /** Nullable — for future per-user filtering. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "lottery_type", length = 20)
+    private LotteryType lotteryType;
+
+    @Column(name = "generation_params_json", columnDefinition = "TEXT")
+    private String generationParamsJson;
+
     @Column(name = "user_id")
     private String userId;
 

@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -28,6 +29,19 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
     }
 
     @Override
+    public List<SavedPrediction> findByUserId(String userId) {
+        return jpaRepository.findByUserIdOrderBySavedAtDesc(userId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public Optional<SavedPrediction> findById(String id) {
+        return jpaRepository.findById(id).map(this::toDomain);
+    }
+
+    @Override
     public void deleteById(String id) {
         jpaRepository.deleteById(id);
     }
@@ -39,6 +53,8 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
                 .savedAt(p.getSavedAt())
                 .latestDrawDate(p.getLatestDrawDate())
                 .combosJson(p.getCombosJson())
+                .lotteryType(p.getLotteryType())
+                .generationParamsJson(p.getGenerationParamsJson())
                 .userId(p.getUserId())
                 .build();
     }
@@ -50,6 +66,8 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
                 .savedAt(e.getSavedAt())
                 .latestDrawDate(e.getLatestDrawDate())
                 .combosJson(e.getCombosJson())
+                .lotteryType(e.getLotteryType())
+                .generationParamsJson(e.getGenerationParamsJson())
                 .userId(e.getUserId())
                 .build();
     }

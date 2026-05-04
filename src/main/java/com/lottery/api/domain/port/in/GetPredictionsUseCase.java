@@ -5,5 +5,5 @@ import com.lottery.api.domain.model.SavedPrediction;
 import java.util.List;
 
 public interface GetPredictionsUseCase {
-    List<SavedPrediction> execute();
+    List<SavedPrediction> execute(String userId);
 }

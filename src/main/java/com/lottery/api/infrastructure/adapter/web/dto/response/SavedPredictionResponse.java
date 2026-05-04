@@ -7,5 +7,7 @@ public record SavedPredictionResponse(
         String label,
         String savedAt,
         String latestDrawDate,
-        JsonNode combos
+        JsonNode combos,
+        String lotteryType,
+        JsonNode generationParams
 ) {}

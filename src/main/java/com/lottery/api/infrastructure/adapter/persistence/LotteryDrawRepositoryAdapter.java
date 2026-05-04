@@ -221,6 +221,12 @@ public class LotteryDrawRepositoryAdapter implements LotteryDrawRepositoryPort {
                 .toList();
     }
 
+    @Override
+    public List<LotteryDraw> findDrawsAfterDate(LotteryType type, LocalDate afterDate) {
+        LocalDate from = afterDate != null ? afterDate : EPOCH;
+        return mapper.toDomainList(jpaRepository.findByTypeAndDrawDateAfter(type, from));
+    }
+
     private List<NumberFrequency> getNumberFrequenciesInRange(LotteryType type, LocalDate from, LocalDate to) {
         var projections = jpaRepository.getNumberFrequenciesInRange(type.name(), from, to);
         return mapper.toNumberFrequencyList(projections, type);

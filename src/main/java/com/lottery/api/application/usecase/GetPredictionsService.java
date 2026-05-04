@@ -17,7 +17,7 @@ public class GetPredictionsService implements GetPredictionsUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<SavedPrediction> execute() {
-        return repository.findAll();
+    public List<SavedPrediction> execute(String userId) {
+        return repository.findByUserId(userId);
     }
 }

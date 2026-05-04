@@ -2,7 +2,11 @@ package com.lottery.api.infrastructure.adapter.web;
 
 import com.lottery.api.domain.exception.CsvParsingException;
 import com.lottery.api.domain.exception.DrawNotFoundException;
+import com.lottery.api.domain.exception.InvalidCredentialsException;
 import com.lottery.api.domain.exception.LotteryException;
+import com.lottery.api.domain.exception.PredictionNotFoundException;
+import com.lottery.api.domain.exception.UnauthorizedPredictionAccessException;
+import com.lottery.api.domain.exception.UserAlreadyExistsException;
 import com.lottery.api.infrastructure.adapter.web.dto.response.ApiError;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +30,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DrawNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(DrawNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(PredictionNotFoundException.class)
+    public ResponseEntity<ApiError> handlePredictionNotFound(PredictionNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(UnauthorizedPredictionAccessException.class)
+    public ResponseEntity<ApiError> handleUnauthorized(UnauthorizedPredictionAccessException ex) {
+        return buildResponse(HttpStatus.FORBIDDEN, ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiError> handleInvalidCredentials(InvalidCredentialsException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<ApiError> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+        return buildResponse(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(LotteryException.class)

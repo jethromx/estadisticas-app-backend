@@ -1,24 +1,27 @@
 package com.lottery.api.infrastructure.config;
 
+import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.ExternalDocumentation;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Configura la documentación OpenAPI 3 de la API de Lotería Nacional.
- *
- * <p>Acceder a la UI en: <a href="http://localhost:8080/swagger-ui.html">swagger-ui.html</a></p>
- */
 @Configuration
 public class OpenApiConfig {
 
     @Bean
     public OpenAPI lotteryOpenAPI() {
         return new OpenAPI()
+                .components(new Components()
+                        .addSecuritySchemes("bearerAuth", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")
+                                .description("JWT obtenido en /api/v1/auth/login")))
                 .info(new Info()
                         .title("Lottery API — Pronósticos Lotería Nacional México")
                         .description("""
@@ -26,14 +29,16 @@ public class OpenApiConfig {
                                 **Melate**, **Revancha**, **Revanchita** y **GanaGato**.
 
                                 Funcionalidades:
+                                - Autenticación JWT con registro e inicio de sesión de usuarios
                                 - Sincronización del histórico de sorteos desde la fuente oficial (CSV)
                                 - Estadísticas agregadas: frecuencias, promedios, números nunca sorteados
                                 - Números calientes y fríos (histórico completo y últimos N sorteos)
-                                - Sugerencias de apuesta basadas en patrones estadísticos
+                                - Predicciones guardadas por usuario con análisis de precisión
+                                - Sugerencias de mejora basadas en comparación con sorteos reales
 
                                 **Aviso:** Las sugerencias son puramente estadísticas y no garantizan resultados.
                                 """)
-                        .version("1.0.0")
+                        .version("2.0.0")
                         .contact(new Contact()
                                 .name("Lottery API")
                                 .email("contacto@lottery-api.com"))

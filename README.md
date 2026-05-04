@@ -1,286 +1,237 @@
-# Lottery API
+# Lottery API — Pronósticos Lotería Nacional México
 
-API REST construida con **Spring Boot 3.4 / Java 21** para análisis estadístico de los juegos de pronósticos de Lotería Nacional de México: **Melate**, **Revancha**, **Revanchita** y **Gana Gato**.
-
----
-
-## Requisitos
-
-| Herramienta | Versión mínima | Notas |
-|---|---|---|
-| Java (JDK) | 21 | Verificar con `java -version` |
-| Gradle | 8.x o 9.x | Instalado vía Homebrew o sdkman |
-| Docker Desktop | Cualquier reciente | Necesario para PostgreSQL y tests de integración |
+API REST para análisis estadístico y predicción de los juegos de pronósticos de la Lotería Nacional de México: **Melate**, **Revancha**, **Revanchita** y **GanaGato**.
 
 ---
 
-## Levantar el entorno
+## Tabla de Contenidos
 
-### 1. Iniciar la base de datos
-
-```bash
-docker compose up -d
-```
-
-Esto levanta:
-- **PostgreSQL 17** en `localhost:5432` (base de datos `lottery_db`)
-- **PgAdmin 4** en `http://localhost:5050` (usuario `admin@lottery.com` / contraseña `admin`)
-
-Flyway ejecuta las migraciones automáticamente al iniciar la app.
-
-### 2. Iniciar la aplicación
-
-```bash
-gradle bootRun
-```
-
-La app arranca en `http://localhost:8080`.
-
----
-
-## Ejecutar los tests
-
-```bash
-gradle test
-```
-
-- Los **tests unitarios** usan mocks (Mockito), no requieren Docker.
-- Los **tests de integración** (`*IT.java`) levantan un contenedor PostgreSQL real con **Testcontainers** — Docker debe estar corriendo.
-- Se genera reporte de cobertura JaCoCo en `build/reports/jacoco/test/html/index.html` (mínimo 90 % en servicios y adaptadores).
-
----
-
-## Documentación interactiva (Swagger UI)
-
-Con la app corriendo:
-
-```
-http://localhost:8080/swagger-ui.html
-```
-
-Todos los endpoints están documentados con descripción, parámetros y ejemplos de respuesta.
-
----
-
-## Endpoints de la API
-
-Base URL: `http://localhost:8080/api/v1/lottery`
-
-Los tipos válidos para `{type}` son: `MELATE`, `REVANCHA`, `REVANCHITA`, `GANA_GATO`
-
-### Sincronización de históricos
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `POST` | `/{type}/sync` | Descarga e inserta el histórico oficial desde Lotería Nacional |
-| `POST` | `/sync/all` | Sincroniza los 4 tipos en secuencia |
-| `POST` | `/{type}/import` | Importa un CSV descargado manualmente (`multipart/form-data`) |
-
-**Ejemplo — sincronizar Melate:**
-```bash
-curl -X POST http://localhost:8080/api/v1/lottery/MELATE/sync
-```
-
-**Respuesta:**
-```json
-{
-  "lotteryType": "MELATE",
-  "totalRecords": 3124,
-  "newRecords": 3124,
-  "skippedRecords": 0,
-  "status": "SUCCESS",
-  "message": "Sincronización completada",
-  "syncedAt": "2026-05-01T12:00:00"
-}
-```
-
-**Importar CSV local:**
-```bash
-curl -X POST http://localhost:8080/api/v1/lottery/MELATE/import \
-  -F "file=@/ruta/al/archivo.csv"
-```
-
----
-
-### Estadísticas
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/{type}/statistics` | Estadísticas completas (frecuencias, top 10, nunca sorteados) |
-| `GET` | `/{type}/statistics?from=YYYY-MM-DD&to=YYYY-MM-DD` | Idem, filtrado por rango de fechas |
-
-**Ejemplo:**
-```bash
-curl http://localhost:8080/api/v1/lottery/MELATE/statistics
-curl "http://localhost:8080/api/v1/lottery/MELATE/statistics?from=2024-01-01&to=2024-12-31"
-```
-
-**Respuesta parcial:**
-```json
-{
-  "lotteryType": "MELATE",
-  "totalDraws": 3124,
-  "firstDrawDate": "1999-05-05",
-  "lastDrawDate": "2026-04-30",
-  "mostFrequent": [
-    { "number": 38, "frequency": 412, "percentage": 13.18 }
-  ],
-  "leastFrequent": [...],
-  "averageFrequency": 334.5,
-  "numbersNeverDrawn": []
-}
-```
-
----
-
-### Frecuencias de números
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/{type}/frequencies` | Frecuencia de todos los números, ordenada por número |
-| `GET` | `/{type}/frequencies/{number}` | Frecuencia de un número específico |
-
-**Ejemplos:**
-```bash
-curl http://localhost:8080/api/v1/lottery/MELATE/frequencies
-curl http://localhost:8080/api/v1/lottery/MELATE/frequencies/7
-```
-
----
-
-### Números calientes y fríos
-
-| Método | Ruta | Parámetros | Descripción |
-|---|---|---|---|
-| `GET` | `/{type}/hot-numbers` | `limit` (default 10) | Top N más frecuentes históricamente |
-| `GET` | `/{type}/cold-numbers` | `limit` (default 10) | Top N menos frecuentes |
-| `GET` | `/{type}/recent-hot-numbers` | `recentDraws` (default 20), `limit` (default 10) | Más frecuentes en los últimos N sorteos |
-
-**Ejemplos:**
-```bash
-curl "http://localhost:8080/api/v1/lottery/MELATE/hot-numbers?limit=15"
-curl "http://localhost:8080/api/v1/lottery/MELATE/cold-numbers?limit=5"
-curl "http://localhost:8080/api/v1/lottery/MELATE/recent-hot-numbers?recentDraws=50&limit=10"
-```
-
----
-
-### Sugerencias estadísticas
-
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/{type}/suggestions` | Devuelve sugerencias con las 4 metodologías |
-| `GET` | `/{type}/suggestions/{methodology}` | Sugerencia de una metodología específica |
-
-Metodologías disponibles:
-
-| Metodología | Descripción | Confianza |
-|---|---|---|
-| `HOT_NUMBERS` | Los N números con mayor frecuencia histórica | 65 % |
-| `COLD_NUMBERS` | Los N menos frecuentes (teoría del retraso) | 45 % |
-| `BALANCED` | Mitad calientes + mitad fríos | 55 % |
-| `STATISTICAL_RANDOM` | Selección aleatoria ponderada por frecuencia | 50 % |
-
-> **Nota:** La confianza es un indicador estadístico relativo, no una predicción. La lotería es aleatoria por definición.
-
-**Ejemplos:**
-```bash
-curl http://localhost:8080/api/v1/lottery/MELATE/suggestions
-curl http://localhost:8080/api/v1/lottery/MELATE/suggestions/HOT_NUMBERS
-curl http://localhost:8080/api/v1/lottery/GANA_GATO/suggestions/BALANCED
-```
-
-**Respuesta:**
-```json
-{
-  "lotteryType": "MELATE",
-  "methodology": "HOT_NUMBERS",
-  "suggestedNumbers": [7, 12, 23, 38, 41, 45],
-  "suggestedAdditional": 19,
-  "description": "Los 6 números con mayor frecuencia histórica",
-  "confidenceScore": 0.65
-}
-```
-
----
-
-## Flujo recomendado para primera ejecución
-
-```bash
-# 1. Levantar infraestructura
-docker compose up -d
-
-# 2. Iniciar la app
-gradle bootRun
-
-# 3. Sincronizar todos los históricos (aprox. 1-2 min)
-curl -X POST http://localhost:8080/api/v1/lottery/sync/all
-
-# 4. Consultar estadísticas de Melate
-curl http://localhost:8080/api/v1/lottery/MELATE/statistics
-
-# 5. Ver sugerencias para Gana Gato
-curl http://localhost:8080/api/v1/lottery/GANA_GATO/suggestions
-```
-
----
-
-## Variables de entorno
-
-La app acepta las siguientes variables de entorno (con sus valores por defecto):
-
-| Variable | Default | Descripción |
-|---|---|---|
-| `DB_HOST` | `localhost` | Host de PostgreSQL |
-| `DB_PORT` | `5432` | Puerto de PostgreSQL |
-| `DB_NAME` | `lottery_db` | Nombre de la base de datos |
-| `DB_USER` | `lottery_user` | Usuario |
-| `DB_PASSWORD` | `lottery_pass` | Contraseña |
+- [Arquitectura](#arquitectura)
+- [Tecnologías](#tecnologías)
+- [Configuración local](#configuración-local)
+- [Variables de entorno](#variables-de-entorno)
+- [Migraciones de base de datos](#migraciones-de-base-de-datos)
+- [Endpoints](#endpoints)
+- [Seguridad](#seguridad)
+- [Tests](#tests)
+- [Despliegue](#despliegue)
 
 ---
 
 ## Arquitectura
 
-El proyecto sigue **arquitectura hexagonal (Ports & Adapters)**:
+El proyecto sigue **arquitectura hexagonal** (Ports & Adapters):
 
 ```
-domain/          → Modelos de negocio y puertos (interfaces)
-application/     → Casos de uso (servicios que implementan puertos de entrada)
-infrastructure/  → Adaptadores: REST (web), JPA (persistence), WebClient (downloader)
+src/main/java/com/lottery/api/
+├── domain/
+│   ├── model/           # Entidades de dominio (SavedPrediction, LotteryDraw, User…)
+│   ├── port/
+│   │   ├── in/          # Puertos de entrada (casos de uso)
+│   │   └── out/         # Puertos de salida (repositorios, encoders)
+│   └── exception/       # Excepciones de dominio
+├── application/
+│   └── usecase/         # Implementaciones de casos de uso (@Service)
+└── infrastructure/
+    ├── adapter/
+    │   ├── web/         # Controllers, DTOs, GlobalExceptionHandler
+    │   ├── persistence/ # Entities JPA, Repositories, Adapters
+    │   └── downloader/  # Descarga y parseo de CSV oficiales
+    └── config/
+        ├── security/    # JWT, Filtros, Spring Security
+        └── …            # OpenAPI, WebClient
 ```
 
-**Regla de dependencias:** `infrastructure → application → domain`. El dominio no conoce ninguna tecnología externa.
-
-### Tecnologías
-
-| Componente | Tecnología |
-|---|---|
-| Framework | Spring Boot 3.4.1 |
-| Lenguaje | Java 21 |
-| Persistencia | Spring Data JPA + PostgreSQL 17 |
-| Migraciones | Flyway |
-| Mapeos | MapStruct 1.6 |
-| Parseo CSV | OpenCSV 5.9 |
-| HTTP Client | Spring WebFlux (WebClient + Reactor Netty) |
-| Documentación | SpringDoc OpenAPI 3 (Swagger UI) |
-| Tests | JUnit 5, Mockito, Testcontainers |
-| Build | Gradle 8/9 |
+**Regla de dependencia estricta:**
+- `domain` — sin imports de Spring, JPA ni Jackson
+- `application` — solo depende de `domain` (sin imports de Spring Security)
+- `infrastructure` — puede importar todo (Spring, JPA, JWT, etc.)
 
 ---
 
-## Estructura de la base de datos
+## Tecnologías
 
-Tabla principal: `lottery_draws`
+| Componente | Versión |
+|---|---|
+| Java | 21 |
+| Spring Boot | 3.4.1 |
+| Spring Security | 6.4 (JWT stateless) |
+| PostgreSQL | 15+ |
+| Flyway | Migraciones V1–V6 |
+| Gradle | 8.x |
+| JJWT | 0.12.6 |
+| MapStruct | 1.6.3 |
+| Springdoc OpenAPI | 2.7.0 |
+| Testcontainers | 1.20.4 |
 
-| Columna | Tipo | Descripción |
+---
+
+## Configuración local
+
+### 1. Levantar la base de datos
+
+```bash
+docker-compose up -d
+```
+
+### 2. Compilar y ejecutar
+
+```bash
+./gradlew bootRun
+```
+
+- API: `http://localhost:8080`
+- Swagger UI: `http://localhost:8080/swagger-ui.html`
+
+---
+
+## Variables de entorno
+
+| Variable | Descripción | Default |
 |---|---|---|
-| `id` | `BIGSERIAL` | PK |
-| `lottery_type` | `VARCHAR` | `MELATE`, `REVANCHA`, `REVANCHITA`, `GANA_GATO` |
-| `draw_number` | `INTEGER` | Número de concurso (único por tipo) |
-| `draw_date` | `DATE` | Fecha del sorteo |
-| `number_1` … `number_8` | `INTEGER` | Números del sorteo (algunos nullable según el tipo) |
-| `additional_number` | `INTEGER` | Solo Melate (R7) |
-| `jackpot_amount` | `NUMERIC` | Monto del pozo |
-| `created_at` | `TIMESTAMP` | Fecha de inserción |
+| `DB_HOST` | Host de PostgreSQL | `localhost` |
+| `DB_PORT` | Puerto de PostgreSQL | `5432` |
+| `DB_NAME` | Nombre de la base de datos | `lottery_db` |
+| `DB_USER` | Usuario de PostgreSQL | `lottery_user` |
+| `DB_PASSWORD` | Contraseña de PostgreSQL | `lottery_pass` |
+| `JWT_SECRET` | Secreto HMAC-SHA256 (mín. 32 chars) | valor de desarrollo (**cambiar en prod**) |
+| `JWT_EXPIRY_MS` | Tiempo de vida del token en ms | `86400000` (24h) |
+| `ALLOWED_ORIGINS` | Orígenes CORS permitidos (coma-separados) | `*` |
+| `PORT` | Puerto del servidor | `8080` |
 
-Restricción única: `(lottery_type, draw_number)` — evita duplicados en re-sincronizaciones.
+---
+
+## Migraciones de base de datos
+
+Flyway ejecuta las migraciones automáticamente al iniciar:
+
+| Versión | Descripción |
+|---|---|
+| V1 | Tabla `lottery_draws` |
+| V2 | Índices de rendimiento |
+| V3 | Tabla `saved_predictions` |
+| V4 | Columnas `lottery_type` y `generation_params_json` en `saved_predictions` |
+| V5 | Tabla `users` (registro, autenticación, roles) |
+| V6 | Tabla `user_activity_log` (trazabilidad de uso) |
+
+---
+
+## Endpoints
+
+### Autenticación (público — sin JWT)
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/v1/auth/register` | Registrar nuevo usuario |
+| POST | `/api/v1/auth/login` | Iniciar sesión → devuelve JWT |
+
+**Todos los demás endpoints requieren:** `Authorization: Bearer <token>`
+
+---
+
+### Sincronización
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| POST | `/api/v1/lottery/{type}/sync` | Sincronizar desde CSV oficial |
+| POST | `/api/v1/lottery/sync/all` | Sincronizar todos los tipos |
+| GET | `/api/v1/lottery/{type}/draws` | Listar sorteos históricos |
+
+`{type}`: `MELATE` | `REVANCHA` | `REVANCHITA` | `GANA_GATO`
+
+---
+
+### Análisis estadístico
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/lottery/{type}/statistics` | Estadísticas generales |
+| GET | `/api/v1/lottery/{type}/frequencies` | Frecuencia histórica de cada número |
+| GET | `/api/v1/lottery/{type}/hot-numbers` | Números más frecuentes |
+| GET | `/api/v1/lottery/{type}/due-numbers` | Números "debidos" (sobreintervalo) |
+| GET | `/api/v1/lottery/{type}/windowed-frequencies` | Frecuencias en últimos N sorteos |
+| GET | `/api/v1/lottery/{type}/balance` | Distribución par/impar y alto/bajo |
+| GET | `/api/v1/lottery/{type}/sum-distribution` | Distribución de sumas |
+| GET | `/api/v1/lottery/{type}/pairs` | Pares más co-ocurrentes |
+| GET | `/api/v1/lottery/{type}/chi-square` | Prueba chi-cuadrado de uniformidad |
+| GET | `/api/v1/lottery/{type}/backtest` | Backtesting de estrategias |
+| GET | `/api/v1/lottery/{type}/bayesian` | Análisis bayesiano |
+| GET | `/api/v1/lottery/{type}/suggestions` | Sugerencias de combinaciones |
+
+---
+
+### Predicciones
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/v1/predictions` | Listar predicciones del usuario autenticado |
+| POST | `/api/v1/predictions` | Guardar predicción con parámetros |
+| DELETE | `/api/v1/predictions/{id}` | Eliminar predicción propia |
+| POST | `/api/v1/predictions/{id}/analyze` | Analizar precisión vs. sorteos reales |
+
+**Parámetro:** `?syncFirst=true` sincroniza nuevos sorteos antes de analizar.
+
+**Body para guardar:**
+```json
+{
+  "label": "Mi predicción Melate enero",
+  "latestDrawDate": "2025-01-15",
+  "lotteryType": "MELATE",
+  "combos": [[3,14,22,37,41,55], [1,5,18,29,33,47]],
+  "generationParams": { "algorithm": "hot-cold-balanced", "windowSize": 50 }
+}
+```
+
+---
+
+## Seguridad
+
+- **JWT stateless** — ningún estado de sesión en el servidor
+- **Aislamiento por usuario** — cada usuario solo accede a sus predicciones
+- **Trazabilidad** — cada acción autenticada se registra en `user_activity_log` de forma asíncrona
+- **Ownership check** — solo el dueño puede eliminar o analizar una predicción propia
+- **Endpoints públicos**: `/api/v1/auth/**`, `/actuator/health`, `/swagger-ui/**`, `/api-docs/**`
+
+---
+
+## Tests
+
+```bash
+# Ejecutar todos los tests (unitarios + integración)
+./gradlew test
+
+# Con reporte Jacoco
+./gradlew test jacocoTestReport
+
+# Abrir reporte HTML
+open build/reports/tests/test/index.html
+```
+
+**Cobertura mínima:** 90% en clases de negocio.  
+**Integración:** Testcontainers levanta PostgreSQL real (no H2).
+
+---
+
+## Despliegue
+
+### Docker
+
+```bash
+docker build -t lottery-api .
+docker run -p 8080:8080 \
+  -e DB_HOST=<host> \
+  -e JWT_SECRET=<secret-min-32-chars> \
+  lottery-api
+```
+
+### Render.com
+
+Configurado en `render.yaml`. Las variables de entorno se definen en el dashboard de Render.
+
+---
+
+## Swagger UI
+
+`http://localhost:8080/swagger-ui.html`
+
+Para autenticarse: ejecutar `POST /api/v1/auth/login` → copiar `token` → click "Authorize" → `Bearer <token>`.

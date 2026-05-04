@@ -95,4 +95,10 @@ public interface LotteryDrawRepositoryPort {
      * Pares de números que co-aparecen con más frecuencia en el mismo sorteo.
      */
     List<NumberPair> getPairFrequencies(LotteryType type, int limit);
+
+    /**
+     * Sorteos del tipo indicado cuya fecha es posterior a {@code afterDate}.
+     * Se usan para comparar predicciones contra resultados reales posteriores al guardado.
+     */
+    List<LotteryDraw> findDrawsAfterDate(LotteryType type, LocalDate afterDate);
 }

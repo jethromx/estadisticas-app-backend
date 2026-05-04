@@ -1,5 +1,8 @@
 package com.lottery.api.application.usecase;
 
+import com.lottery.api.domain.exception.PredictionNotFoundException;
+import com.lottery.api.domain.exception.UnauthorizedPredictionAccessException;
+import com.lottery.api.domain.model.SavedPrediction;
 import com.lottery.api.domain.port.in.DeletePredictionUseCase;
 import com.lottery.api.domain.port.out.SavedPredictionRepositoryPort;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +17,14 @@ public class DeletePredictionService implements DeletePredictionUseCase {
 
     @Override
     @Transactional
-    public void execute(String id) {
+    public void execute(String id, String requestingUserId) {
+        SavedPrediction prediction = repository.findById(id)
+                .orElseThrow(() -> new PredictionNotFoundException(id));
+
+        if (prediction.getUserId() != null && !prediction.getUserId().equals(requestingUserId)) {
+            throw new UnauthorizedPredictionAccessException();
+        }
+
         repository.deleteById(id);
     }
 }

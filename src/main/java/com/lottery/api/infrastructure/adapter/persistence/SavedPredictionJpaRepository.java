@@ -8,4 +8,6 @@ import java.util.List;
 public interface SavedPredictionJpaRepository extends JpaRepository<SavedPredictionEntity, String> {
 
     List<SavedPredictionEntity> findAllByOrderBySavedAtDesc();
+
+    List<SavedPredictionEntity> findByUserIdOrderBySavedAtDesc(String userId);
 }

@@ -65,6 +65,9 @@ management:
 
 app:
   allowed-origins: ${ALLOWED_ORIGINS:*}
+  jwt:
+    secret: ${JWT_SECRET:lottery-api-default-secret-key-change-in-production-min-32-chars}
+    expiry-ms: ${JWT_EXPIRY_MS:86400000}
 
 logging:
   level:

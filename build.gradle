@@ -30,6 +30,7 @@ ext {
     springdocVersion      = '2.7.0'
     testcontainersVersion = '1.20.4'
     opencsvVersion        = '5.9'
+    jjwtVersion           = '0.12.6'
 }
 
 dependencies {
@@ -60,8 +61,17 @@ dependencies {
     // Parseo de CSV
     implementation "com.opencsv:opencsv:${opencsvVersion}"
 
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JWT (JJWT)
+    implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+    runtimeOnly    "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+    runtimeOnly    "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
     // Tests
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation "org.testcontainers:junit-jupiter:${testcontainersVersion}"
     testImplementation "org.testcontainers:postgresql:${testcontainersVersion}"

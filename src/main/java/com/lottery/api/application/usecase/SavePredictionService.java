@@ -1,5 +1,6 @@
 package com.lottery.api.application.usecase;
 
+import com.lottery.api.domain.model.SavePredictionCommand;
 import com.lottery.api.domain.model.SavedPrediction;
 import com.lottery.api.domain.port.in.SavePredictionUseCase;
 import com.lottery.api.domain.port.out.SavedPredictionRepositoryPort;
@@ -19,17 +20,20 @@ public class SavePredictionService implements SavePredictionUseCase {
 
     @Override
     @Transactional
-    public SavedPrediction execute(String label, String latestDrawDate, String combosJson) {
-        LocalDate drawDate = (latestDrawDate != null && !latestDrawDate.isBlank())
-                ? LocalDate.parse(latestDrawDate)
+    public SavedPrediction execute(SavePredictionCommand command) {
+        LocalDate drawDate = (command.latestDrawDate() != null && !command.latestDrawDate().isBlank())
+                ? LocalDate.parse(command.latestDrawDate())
                 : null;
 
         SavedPrediction prediction = SavedPrediction.builder()
                 .id(UUID.randomUUID().toString())
-                .label(label)
+                .label(command.label())
                 .savedAt(LocalDateTime.now())
                 .latestDrawDate(drawDate)
-                .combosJson(combosJson)
+                .combosJson(command.combosJson())
+                .lotteryType(command.lotteryType())
+                .generationParamsJson(command.generationParamsJson())
+                .userId(command.userId())
                 .build();
 
         return repository.save(prediction);

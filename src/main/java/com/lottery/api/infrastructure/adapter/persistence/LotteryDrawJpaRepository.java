@@ -322,6 +322,13 @@ public interface LotteryDrawJpaRepository extends JpaRepository<LotteryDrawEntit
      * Top-N pares de números que co-aparecen con más frecuencia en el mismo sorteo.
      * Usa LATERAL UNNEST para generar todos los pares (a < b) de cada sorteo.
      */
+    @Query("SELECT d FROM LotteryDrawEntity d " +
+           "WHERE d.lotteryType = :type AND d.drawDate > :afterDate " +
+           "ORDER BY d.drawDate ASC")
+    List<LotteryDrawEntity> findByTypeAndDrawDateAfter(
+            @Param("type") LotteryType type,
+            @Param("afterDate") LocalDate afterDate);
+
     @Query(value = """
         WITH nums AS (
             SELECT draw_number,
