@@ -29,6 +29,8 @@ services:
           property: password
       - key: ALLOWED_ORIGINS
         value: https://estadisticas-app.vercel.app
+      - key: JWT_SECRET
+        generateValue: true
 
 databases:
   - name: estadisticas-db
