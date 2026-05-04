@@ -26,6 +26,8 @@ public class CorsConfig {
             for (String origin : allowedOrigins.split(",")) {
                 config.addAllowedOriginPattern(origin.trim());
             }
+            // Always allow localhost for local development
+            config.addAllowedOriginPattern("http://localhost:*");
         }
 
         config.addAllowedHeader("*");
