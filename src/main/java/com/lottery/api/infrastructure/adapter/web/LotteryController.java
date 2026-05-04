@@ -51,6 +51,7 @@ public class LotteryController {
     private final GetChiSquareUseCase             chiSquareUseCase;
     private final GetBacktestUseCase              backtestUseCase;
     private final GetBayesianAnalysisUseCase      bayesianAnalysisUseCase;
+    private final GetDrawResultsUseCase           drawResultsUseCase;
     private final LotteryWebMapper                webMapper;
 
     // =========================================================================
@@ -338,6 +339,25 @@ public class LotteryController {
         return ResponseEntity.ok(
                 webMapper.toBayesianResponseList(
                         bayesianAnalysisUseCase.getBayesianAnalysis(parseLotteryType(type), recentWindow)));
+    }
+
+    // =========================================================================
+    // Sorteos históricos
+    // =========================================================================
+
+    @GetMapping("/{type}/draws")
+    @Operation(summary = "Histórico de sorteos",
+               description = "Devuelve los sorteos más recientes con sus números principales, " +
+                             "útil para verificar si una combinación ya fue sorteada.")
+    public ResponseEntity<List<DrawResultResponse>> getDraws(
+            @PathVariable String type,
+            @Parameter(description = "Máximo de sorteos a retornar (default 5000)")
+            @RequestParam(defaultValue = "5000") @Min(1) @Max(10000) int limit) {
+        return ResponseEntity.ok(
+                drawResultsUseCase.execute(parseLotteryType(type), limit)
+                        .stream()
+                        .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()))
+                        .toList());
     }
 
     // =========================================================================
