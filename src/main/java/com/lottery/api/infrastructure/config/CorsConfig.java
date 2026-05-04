@@ -29,7 +29,7 @@ public class CorsConfig {
         }
 
         config.addAllowedHeader("*");
-        config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "DELETE", "OPTIONS"));
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

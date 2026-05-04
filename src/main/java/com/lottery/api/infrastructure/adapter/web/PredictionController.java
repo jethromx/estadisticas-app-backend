@@ -1,5 +1,7 @@
 package com.lottery.api.infrastructure.adapter.web;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lottery.api.domain.model.SavedPrediction;
 import com.lottery.api.domain.port.in.DeletePredictionUseCase;
 import com.lottery.api.domain.port.in.GetPredictionsUseCase;
@@ -10,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -23,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
+@Slf4j
 @Tag(name = "Predictions", description = "Predicciones de combinaciones guardadas")
 @RestController
 @RequestMapping("/api/v1/predictions")
@@ -33,6 +37,7 @@ public class PredictionController {
     private final SavePredictionUseCase savePredictionUseCase;
     private final GetPredictionsUseCase getPredictionsUseCase;
     private final DeletePredictionUseCase deletePredictionUseCase;
+    private final ObjectMapper objectMapper;
 
     @Operation(summary = "Listar predicciones guardadas")
     @GetMapping
@@ -63,12 +68,19 @@ public class PredictionController {
     }
 
     private SavedPredictionResponse toResponse(SavedPrediction p) {
+        JsonNode combosNode;
+        try {
+            combosNode = objectMapper.readTree(p.getCombosJson());
+        } catch (Exception e) {
+            log.error("Error parsing combosJson for prediction {}: {}", p.getId(), e.getMessage());
+            combosNode = objectMapper.createArrayNode();
+        }
         return new SavedPredictionResponse(
                 p.getId(),
                 p.getLabel(),
                 p.getSavedAt().toString(),
                 p.getLatestDrawDate() != null ? p.getLatestDrawDate().toString() : null,
-                p.getCombosJson()
+                combosNode
         );
     }
 }
