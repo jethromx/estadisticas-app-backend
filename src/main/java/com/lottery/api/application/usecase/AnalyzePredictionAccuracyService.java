@@ -31,7 +31,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccuracyUseCase {
 
-    private static final TypeReference<List<List<Integer>>> COMBOS_TYPE = new TypeReference<>() {};
+    private static final TypeReference<List<List<Integer>>> ARRAY_COMBOS_TYPE = new TypeReference<>() {};
     private static final double HOT_NUMBER_THRESHOLD = 0.2;
     private static final double SKEW_THRESHOLD = 0.4;
 
@@ -50,12 +50,9 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
             throw new UnauthorizedPredictionAccessException();
         }
 
-        if (prediction.getLotteryType() == null) {
-            throw new IllegalStateException(
-                    "Esta predicción no tiene tipo de lotería registrado; no se puede analizar.");
-        }
-
-        LotteryType lotteryType = prediction.getLotteryType();
+        LotteryType lotteryType = prediction.getLotteryType() != null
+                ? prediction.getLotteryType()
+                : LotteryType.MELATE;
 
         if (syncFirst) {
             try {
@@ -195,7 +192,24 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
 
     private List<List<Integer>> parseCombos(String combosJson) {
         try {
-            return objectMapper.readValue(combosJson, COMBOS_TYPE);
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(combosJson);
+            if (!root.isArray()) return List.of();
+
+            List<List<Integer>> result = new ArrayList<>();
+            for (com.fasterxml.jackson.databind.JsonNode node : root) {
+                if (node.isArray()) {
+                    // legacy format: [[1,2,3,...]]
+                    List<Integer> nums = new ArrayList<>();
+                    node.forEach(n -> nums.add(n.asInt()));
+                    result.add(nums);
+                } else if (node.isObject() && node.has("numbers")) {
+                    // current format: [{"numbers":[1,2,3,...],...}]
+                    List<Integer> nums = new ArrayList<>();
+                    node.get("numbers").forEach(n -> nums.add(n.asInt()));
+                    result.add(nums);
+                }
+            }
+            return result;
         } catch (Exception e) {
             log.error("Error parseando combosJson: {}", e.getMessage());
             return List.of();
