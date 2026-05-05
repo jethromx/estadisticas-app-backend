@@ -41,7 +41,7 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
     private final ObjectMapper objectMapper;
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public PredictionAccuracyResult execute(String predictionId, String requestingUserId, boolean syncFirst) {
         SavedPrediction prediction = predictionRepository.findById(predictionId)
                 .orElseThrow(() -> new PredictionNotFoundException(predictionId));
