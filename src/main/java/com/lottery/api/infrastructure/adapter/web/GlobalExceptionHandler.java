@@ -7,6 +7,7 @@ import com.lottery.api.domain.exception.LotteryException;
 import com.lottery.api.domain.exception.PredictionNotFoundException;
 import com.lottery.api.domain.exception.UnauthorizedPredictionAccessException;
 import com.lottery.api.domain.exception.UserAlreadyExistsException;
+import com.lottery.api.domain.exception.UserNotFoundException;
 import com.lottery.api.infrastructure.adapter.web.dto.response.ApiError;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +35,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PredictionNotFoundException.class)
     public ResponseEntity<ApiError> handlePredictionNotFound(PredictionNotFoundException ex) {
+        return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity<ApiError> handleUserNotFound(UserNotFoundException ex) {
         return buildResponse(HttpStatus.NOT_FOUND, ex.getMessage());
     }
 
