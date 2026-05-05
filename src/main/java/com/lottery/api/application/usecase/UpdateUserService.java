@@ -5,6 +5,7 @@ import com.lottery.api.domain.exception.UserNotFoundException;
 import com.lottery.api.domain.model.User;
 import com.lottery.api.domain.model.UserRole;
 import com.lottery.api.domain.port.in.UpdateUserUseCase;
+import com.lottery.api.domain.port.out.PasswordEncoderPort;
 import com.lottery.api.domain.port.out.UserRepositoryPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,10 +18,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class UpdateUserService implements UpdateUserUseCase {
 
     private final UserRepositoryPort userRepository;
+    private final PasswordEncoderPort passwordEncoder;
 
     @Override
     @Transactional
-    public User execute(String id, String username, String email, String role, Boolean active) {
+    public User execute(String id, String username, String email, String role, Boolean active, String password) {
         log.info("Updating user with id: {}, username: {}, email: {}, role: {}, active: {}", id, username, email, role, active);
 
         User existingUser = userRepository.findById(id)
@@ -45,11 +47,15 @@ public class UpdateUserService implements UpdateUserUseCase {
 
         log.info("Creating updated user with role: {}, active: {}", userRole, activeValue);
 
+        String passwordHash = (password != null && !password.isBlank())
+                ? passwordEncoder.encode(password)
+                : existingUser.getPasswordHash();
+
         User updatedUser = User.builder()
                 .id(existingUser.getId())
                 .username(username)
                 .email(email)
-                .passwordHash(existingUser.getPasswordHash()) // Keep existing password
+                .passwordHash(passwordHash)
                 .role(userRole)
                 .active(activeValue)
                 .createdAt(existingUser.getCreatedAt()) // Preserve original createdAt

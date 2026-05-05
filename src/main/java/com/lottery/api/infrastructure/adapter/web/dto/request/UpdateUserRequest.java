@@ -7,5 +7,6 @@ public record UpdateUserRequest(
         @NotBlank String username,
         @Email @NotBlank String email,
         String role,
-        Boolean active
+        Boolean active,
+        String password
 ) {}

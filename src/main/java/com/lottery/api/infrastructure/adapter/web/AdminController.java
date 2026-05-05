@@ -25,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -72,7 +73,7 @@ public class AdminController {
         log.info("PUT /admin/users/{} - updating user", id);
         log.info("Request: username={}, email={}, role={}, active={}", req.username(), req.email(), req.role(), req.active());
         
-        User user = updateUserUseCase.execute(id, req.username(), req.email(), req.role(), req.active());
+        User user = updateUserUseCase.execute(id, req.username(), req.email(), req.role(), req.active(), req.password());
         
         AdminUserResponse resp = new AdminUserResponse(
                 user.getId(), user.getUsername(), user.getEmail(),
@@ -100,19 +101,29 @@ public class AdminController {
         return ResponseEntity.ok(new AdminMetricsResponse(totalUsers, totalPredictions, actionBreakdown));
     }
 
+    @GetMapping("/ping")
+    public ResponseEntity<Map<String, Object>> ping() {
+        return ResponseEntity.ok(Map.of("version", "NEW_CODE_v2", "userId_test", "working"));
+    }
+
     @Operation(summary = "Listar todas las predicciones (todos los usuarios)")
     @GetMapping("/predictions")
-    public ResponseEntity<List<SavedPredictionResponse>> getAllPredictions() {
-        List<SavedPredictionResponse> predictions = savedPredictionRepositoryPort.findAll().stream()
-                .map(p -> new SavedPredictionResponse(
-                        p.getId(),
-                        p.getLabel(),
-                        p.getSavedAt() != null ? p.getSavedAt().toString() : null,
-                        p.getLatestDrawDate() != null ? p.getLatestDrawDate().toString() : null,
-                        parseJson(p.getCombosJson(), p.getId()),
-                        p.getLotteryType() != null ? p.getLotteryType().name() : null,
-                        p.getGenerationParamsJson() != null ? parseJson(p.getGenerationParamsJson(), p.getId()) : null
-                ))
+    public ResponseEntity<List<Map<String, Object>>> getAllPredictions() {
+        List<Map<String, Object>> predictions = savedPredictionRepositoryPort.findAll().stream()
+                .map(p -> {
+                    Map<String, Object> m = new HashMap<>();
+                    m.put("id", p.getId());
+                    m.put("label", p.getLabel());
+                    m.put("savedAt", p.getSavedAt() != null ? p.getSavedAt().toString() : null);
+                    m.put("latestDrawDate", p.getLatestDrawDate() != null ? p.getLatestDrawDate().toString() : null);
+                    m.put("combos", parseJson(p.getCombosJson(), p.getId()));
+                    m.put("lotteryType", p.getLotteryType() != null ? p.getLotteryType().name() : null);
+                    m.put("generationParams", p.getGenerationParamsJson() != null ? parseJson(p.getGenerationParamsJson(), p.getId()) : null);
+                    String uid = p.getUserId();
+                    log.info("DEBUG prediction {} userId={}", p.getId(), uid);
+                    m.put("userId", uid != null ? uid : "NO_USER_ID");
+                    return m;
+                })
                 .toList();
         return ResponseEntity.ok(predictions);
     }

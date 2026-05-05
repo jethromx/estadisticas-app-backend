@@ -122,7 +122,8 @@ public class PredictionController {
                 p.getLatestDrawDate() != null ? p.getLatestDrawDate().toString() : null,
                 combosNode,
                 p.getLotteryType() != null ? p.getLotteryType().name() : null,
-                paramsNode
+                paramsNode,
+                p.getUserId()
         );
     }
 
