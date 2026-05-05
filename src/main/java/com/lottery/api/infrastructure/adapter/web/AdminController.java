@@ -109,6 +109,12 @@ public class AdminController {
     @Operation(summary = "Listar todas las predicciones (todos los usuarios)")
     @GetMapping("/predictions")
     public ResponseEntity<List<Map<String, Object>>> getAllPredictions() {
+        Map<String, String> usernames = getAllUsersUseCase.execute().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.lottery.api.domain.model.User::getId,
+                        com.lottery.api.domain.model.User::getUsername,
+                        (a, b) -> a));
+
         List<Map<String, Object>> predictions = savedPredictionRepositoryPort.findAll().stream()
                 .map(p -> {
                     Map<String, Object> m = new HashMap<>();
@@ -120,8 +126,8 @@ public class AdminController {
                     m.put("lotteryType", p.getLotteryType() != null ? p.getLotteryType().name() : null);
                     m.put("generationParams", p.getGenerationParamsJson() != null ? parseJson(p.getGenerationParamsJson(), p.getId()) : null);
                     String uid = p.getUserId();
-                    log.info("DEBUG prediction {} userId={}", p.getId(), uid);
-                    m.put("userId", uid != null ? uid : "NO_USER_ID");
+                    m.put("userId", uid != null ? uid : null);
+                    m.put("username", uid != null ? usernames.getOrDefault(uid, uid) : null);
                     return m;
                 })
                 .toList();
