@@ -64,6 +64,7 @@ public class LotteryController {
     private final GetSumStreakUseCase             sumStreakUseCase;
     private final GetEnsemblePredictionUseCase    ensemblePredictionUseCase;
     private final GetCalendarFrequencyUseCase     calendarFrequencyUseCase;
+    private final GetNeuralPredictionUseCase      neuralPredictionUseCase;
     private final LotteryWebMapper                webMapper;
 
     // =========================================================================
@@ -507,6 +508,22 @@ public class LotteryController {
             @RequestParam(defaultValue = "30") @Min(10) @Max(200) int validationDraws) {
         return ResponseEntity.ok(webMapper.toResponse(
                 ensemblePredictionUseCase.getEnsemblePrediction(parseLotteryType(type), validationDraws)));
+    }
+
+    // Predicción red neuronal MLP (Java puro)
+    // =========================================================================
+
+    @GetMapping("/{type}/neural-prediction")
+    @Operation(summary = "Predicción MLP — Red neuronal feedforward",
+               description = "Entrena una red neuronal feedforward (MLP 8→16→8→1) en Java puro " +
+                             "sobre el histórico del juego. Para cada número extrae 8 features " +
+                             "(frecuencias recientes, due-score, tendencia, momentum) y predice la " +
+                             "probabilidad de aparecer en el próximo sorteo. Devuelve scores por " +
+                             "número y 3 combinaciones sugeridas. El resultado se cachea 6 horas.")
+    public ResponseEntity<NeuralPredictionResponse> getNeuralPrediction(
+            @PathVariable String type) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                neuralPredictionUseCase.getNeuralPrediction(parseLotteryType(type))));
     }
 
     // =========================================================================

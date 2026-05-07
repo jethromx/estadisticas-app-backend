@@ -42,6 +42,8 @@ import com.lottery.api.infrastructure.adapter.web.dto.response.SumStreakResponse
 import com.lottery.api.infrastructure.adapter.web.dto.response.SyncResultResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.TemporalWeightResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.WindowedFrequencyResponse;
+import com.lottery.api.domain.model.NeuralPrediction;
+import com.lottery.api.infrastructure.adapter.web.dto.response.NeuralPredictionResponse;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -286,6 +288,29 @@ public interface LotteryWebMapper {
             mr.setDrawCount(m.getDrawCount()); mr.setNumberFrequencies(m.getNumberFrequencies());
             mr.setHotNumbers(m.getHotNumbers());
             return mr;
+        }).collect(Collectors.toList()));
+        return r;
+    }
+
+    default NeuralPredictionResponse toResponse(NeuralPrediction src) {
+        if (src == null) return null;
+        NeuralPredictionResponse r = new NeuralPredictionResponse();
+        r.setLotteryType(src.getLotteryType().name());
+        r.setTotalDrawsAnalyzed(src.getTotalDrawsAnalyzed());
+        r.setTrainingDraws(src.getTrainingDraws());
+        r.setValidationDraws(src.getValidationDraws());
+        r.setValidationHitRate(src.getValidationHitRate());
+        r.setTrainingEpochs(src.getTrainingEpochs());
+        r.setMethodDescription(src.getMethodDescription());
+        r.setSuggestedCombos(src.getSuggestedCombos());
+        r.setScoredNumbers(src.getScoredNumbers().stream().map(n -> {
+            NeuralPredictionResponse.ScoredNumberResponse nr = new NeuralPredictionResponse.ScoredNumberResponse();
+            nr.setNumber(n.getNumber()); nr.setRank(n.getRank());
+            nr.setProbability(n.getProbability());
+            nr.setRecentFreq50(n.getRecentFreq50());
+            nr.setDueScore(n.getDueScore());
+            nr.setTrend(n.getTrend());
+            return nr;
         }).collect(Collectors.toList()));
         return r;
     }

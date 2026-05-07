@@ -53,6 +53,7 @@ public class SyncHistoricalDataService implements SyncHistoricalDataUseCase {
         @CacheEvict(value = "analysis-streak",        allEntries = true),
         @CacheEvict(value = "analysis-ensemble",      allEntries = true),
         @CacheEvict(value = "analysis-calendar",      allEntries = true),
+        @CacheEvict(value = "analysis-neural",        allEntries = true),
     })
     public SyncResult syncHistoricalData(LotteryType lotteryType) {
         log.info("Iniciando sincronización para: {}", lotteryType);

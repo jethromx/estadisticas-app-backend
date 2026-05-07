@@ -62,6 +62,7 @@ class LotteryControllerTest {
     @MockBean private GetSumStreakUseCase sumStreakUseCase;
     @MockBean private GetEnsemblePredictionUseCase ensemblePredictionUseCase;
     @MockBean private GetCalendarFrequencyUseCase calendarFrequencyUseCase;
+    @MockBean private GetNeuralPredictionUseCase neuralPredictionUseCase;
     @MockBean private LotteryWebMapper webMapper;
     // Security: mock dependencies of filters, not the filters themselves
     // (mocking filters stops chain.doFilter() from being called)
