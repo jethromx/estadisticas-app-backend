@@ -50,12 +50,13 @@ public class GetNeuralPredictionService implements GetNeuralPredictionUseCase {
     private static final int    INPUT_SIZE        = 8;
     private static final int    HIDDEN1           = 16;
     private static final int    HIDDEN2           = 8;
-    private static final int    EPOCHS            = 60;
+    private static final int    EPOCHS            = 15;   // 15 es suficiente; 60 supera timeout en Render free
     private static final int    BATCH_SIZE        = 256;
     private static final double LR                = 0.01;
     private static final double L2                = 0.001;
-    private static final int    MIN_HISTORY       = 200;
-    private static final int    VALIDATION_DRAWS  = 50;
+    private static final int    MIN_HISTORY       = 100;
+    private static final int    VALIDATION_DRAWS  = 30;
+    private static final int    MAX_TRAIN_DRAWS   = 600; // cap: no usar más de 600 sorteos para entrenar
 
     private final LotteryDrawRepositoryPort repositoryPort;
 
@@ -86,9 +87,9 @@ public class GetNeuralPredictionService implements GetNeuralPredictionUseCase {
         // Peso de clase positiva: compensa el desbalance (solo numsPerDraw de numNumbers aparecen)
         double posWeight = (double) (numNumbers - numsPerDraw) / numsPerDraw;
 
-        // 2. Construir conjunto de entrenamiento (draws MIN_HISTORY..N-VALIDATION_DRAWS)
-        int trainStart = MIN_HISTORY;
+        // 2. Construir conjunto de entrenamiento (últimos MAX_TRAIN_DRAWS sorteos disponibles)
         int trainEnd   = N - VALIDATION_DRAWS;
+        int trainStart = Math.max(MIN_HISTORY, trainEnd - MAX_TRAIN_DRAWS);
         int trainSamples = (trainEnd - trainStart) * numNumbers;
 
         List<double[]> trainX = new ArrayList<>(trainSamples);

@@ -95,6 +95,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
     }
 
+    @ExceptionHandler(Throwable.class)
+    public ResponseEntity<ApiError> handleThrowable(Throwable ex) {
+        log.error("Error crítico ({}): {}", ex.getClass().getSimpleName(), ex.getMessage(), ex);
+        return buildResponse(HttpStatus.INTERNAL_SERVER_ERROR, "Error interno del servidor");
+    }
+
     private ResponseEntity<ApiError> buildResponse(HttpStatus status, String message) {
         return buildResponse(status, message, null);
     }
