@@ -76,11 +76,4 @@ class GetNumberFrequenciesServiceTest {
                 .isInstanceOf(LotteryException.class);
     }
 
-    @Test
-    @DisplayName("GanaGato: número 6 fuera de rango 1-5 debe lanzar excepción")
-    void getNumberFrequency_ganaGatoOutOfRange_throwsException() {
-        assertThatThrownBy(() -> service.getNumberFrequency(LotteryType.GANA_GATO, 6))
-                .isInstanceOf(LotteryException.class)
-                .hasMessageContaining("GanaGato");
-    }
 }

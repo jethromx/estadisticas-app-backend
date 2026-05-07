@@ -56,7 +56,9 @@ lottery:
     melate: "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=TQBlAGwAYQB0AGUA"
     revancha: "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=UgBlAHYAYQBuAGMAaABhAA=="
     revanchita: "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=UgBlAHYAYQBuAGMAaABpAHQAYQA="
-    gana-gato: "https://www.loterianacional.gob.mx/Home/Historicos?ARHP=RwBhAG4AYQBHAGEAdABvAA=="
+  sync:
+    cron: "0 0 3 * * WED,SAT"
+    stale-threshold-days: 3
 
 management:
   endpoints:

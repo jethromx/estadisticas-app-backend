@@ -64,7 +64,6 @@ public class LotteryController {
     private final GetSumStreakUseCase             sumStreakUseCase;
     private final GetEnsemblePredictionUseCase    ensemblePredictionUseCase;
     private final GetCalendarFrequencyUseCase     calendarFrequencyUseCase;
-    private final GetNeuralPredictionUseCase      neuralPredictionUseCase;
     private final LotteryWebMapper                webMapper;
 
     // =========================================================================
@@ -90,7 +89,7 @@ public class LotteryController {
 
     @PostMapping("/sync/all")
     @Operation(summary = "Sincronizar todos los tipos",
-               description = "Ejecuta la sincronización para MELATE, REVANCHA, REVANCHITA y GANA_GATO")
+               description = "Ejecuta la sincronización para MELATE, REVANCHA y REVANCHITA")
     public ResponseEntity<List<SyncResultResponse>> syncAll() {
         return ResponseEntity.ok(webMapper.toSyncResponseList(syncUseCase.syncAllHistoricalData()));
     }
@@ -510,20 +509,18 @@ public class LotteryController {
                 ensemblePredictionUseCase.getEnsemblePrediction(parseLotteryType(type), validationDraws)));
     }
 
-    // Predicción red neuronal MLP (Java puro)
+    // Predicción red neuronal MLP — deshabilitada (demasiado costosa para Render free tier)
     // =========================================================================
 
     @GetMapping("/{type}/neural-prediction")
-    @Operation(summary = "Predicción MLP — Red neuronal feedforward",
-               description = "Entrena una red neuronal feedforward (MLP 8→16→8→1) en Java puro " +
-                             "sobre el histórico del juego. Para cada número extrae 8 features " +
-                             "(frecuencias recientes, due-score, tendencia, momentum) y predice la " +
-                             "probabilidad de aparecer en el próximo sorteo. Devuelve scores por " +
-                             "número y 3 combinaciones sugeridas. El resultado se cachea 6 horas.")
-    public ResponseEntity<NeuralPredictionResponse> getNeuralPrediction(
-            @PathVariable String type) {
-        return ResponseEntity.ok(webMapper.toResponse(
-                neuralPredictionUseCase.getNeuralPrediction(parseLotteryType(type))));
+    @Operation(summary = "Predicción MLP — deshabilitada temporalmente")
+    public ResponseEntity<ApiError> getNeuralPrediction(@PathVariable String type) {
+        ApiError err = ApiError.builder()
+                .status(503)
+                .message("La predicción neural está temporalmente deshabilitada en este entorno.")
+                .timestamp(java.time.LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(503).body(err);
     }
 
     // =========================================================================
@@ -548,7 +545,7 @@ public class LotteryController {
             return LotteryType.valueOf(type.toUpperCase());
         } catch (IllegalArgumentException e) {
             throw new com.lottery.api.domain.exception.LotteryException(
-                    "Tipo de lotería inválido: '" + type + "'. Valores válidos: MELATE, REVANCHA, REVANCHITA, GANA_GATO");
+                    "Tipo de lotería inválido: '" + type + "'. Valores válidos: MELATE, REVANCHA, REVANCHITA");
         }
     }
 }

@@ -94,12 +94,12 @@ class GetStatisticsServiceTest {
     @Test
     @DisplayName("debe retornar promedioFrequency 0 cuando no hay datos")
     void getStatistics_noData_returnsZeroAverage() {
-        when(repositoryPort.getNumberFrequencies(LotteryType.GANA_GATO)).thenReturn(List.of());
-        when(repositoryPort.countByType(LotteryType.GANA_GATO)).thenReturn(0L);
+        when(repositoryPort.getNumberFrequencies(LotteryType.MELATE)).thenReturn(List.of());
+        when(repositoryPort.countByType(LotteryType.MELATE)).thenReturn(0L);
         when(repositoryPort.findFirstDrawDateByType(any())).thenReturn(Optional.empty());
         when(repositoryPort.findLastDrawDateByType(any())).thenReturn(Optional.empty());
 
-        LotteryStatistics stats = service.getStatistics(LotteryType.GANA_GATO);
+        LotteryStatistics stats = service.getStatistics(LotteryType.MELATE);
 
         assertThat(stats.getAverageFrequency()).isEqualTo(0.0);
         assertThat(stats.getMostFrequent()).isEmpty();

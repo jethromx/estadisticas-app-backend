@@ -30,7 +30,6 @@ class MelateCsvParserTest {
         assertThat(parser.supports(LotteryType.MELATE)).isTrue();
         assertThat(parser.supports(LotteryType.REVANCHA)).isFalse();
         assertThat(parser.supports(LotteryType.REVANCHITA)).isFalse();
-        assertThat(parser.supports(LotteryType.GANA_GATO)).isFalse();
     }
 
     @Test

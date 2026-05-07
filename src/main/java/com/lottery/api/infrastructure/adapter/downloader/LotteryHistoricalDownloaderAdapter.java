@@ -40,7 +40,6 @@ public class LotteryHistoricalDownloaderAdapter implements LotteryHistoricalDown
             @Value("${lottery.urls.melate}")     String melateUrl,
             @Value("${lottery.urls.revancha}")   String revanchaUrl,
             @Value("${lottery.urls.revanchita}") String revanchitaUrl,
-            @Value("${lottery.urls.gana-gato}")  String ganaGatoUrl,
             @Value("${lottery.download.max-retries:3}") int maxRetries) {
 
         this.webClient  = webClient;
@@ -49,8 +48,7 @@ public class LotteryHistoricalDownloaderAdapter implements LotteryHistoricalDown
         this.urls = Map.of(
                 LotteryType.MELATE,      melateUrl,
                 LotteryType.REVANCHA,    revanchaUrl,
-                LotteryType.REVANCHITA,  revanchitaUrl,
-                LotteryType.GANA_GATO,   ganaGatoUrl
+                LotteryType.REVANCHITA,  revanchitaUrl
         );
     }
 

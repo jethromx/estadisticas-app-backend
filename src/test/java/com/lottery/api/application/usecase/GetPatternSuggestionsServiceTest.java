@@ -129,21 +129,6 @@ class GetPatternSuggestionsServiceTest {
     }
 
     @Test
-    @DisplayName("GanaGato debe sugerir 8 números en rango 1-5")
-    void getSuggestion_ganaGato_eightNumbersInRange() {
-        List<NumberFrequency> ganaGatoFreqs = IntStream.rangeClosed(1, 5)
-                .mapToObj(n -> NumberFrequency.builder().number(n).frequency((long) (n * 100)).build())
-                .toList();
-        when(repositoryPort.getNumberFrequencies(LotteryType.GANA_GATO)).thenReturn(ganaGatoFreqs);
-
-        PatternSuggestion suggestion = service.getSuggestionByMethodology(LotteryType.GANA_GATO, "STATISTICAL_RANDOM");
-
-        assertThat(suggestion.getSuggestedNumbers()).hasSize(LotteryType.GANA_GATO.getNumbersCount());
-        assertThat(suggestion.getSuggestedNumbers())
-                .allMatch(n -> n >= 1 && n <= 5);
-    }
-
-    @Test
     @DisplayName("metodología en minúsculas también funciona")
     void getSuggestionByMethodology_lowercaseInput_works() {
         when(repositoryPort.getNumberFrequencies(LotteryType.MELATE)).thenReturn(melateFrequencies());

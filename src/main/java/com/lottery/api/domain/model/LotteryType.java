@@ -20,10 +20,7 @@ public enum LotteryType {
     REVANCHA("Revancha", 6, 1, 56, 0, false),
 
     /** Revanchita: 6 números (1-56), sin adicional. */
-    REVANCHITA("Revanchita", 6, 1, 56, 0, false),
-
-    /** GanaGato: 8 números en rango 1-5, se permiten repetidos. */
-    GANA_GATO("GanaGato", 8, 1, 5, 0, true);
+    REVANCHITA("Revanchita", 6, 1, 56, 0, false);
 
     /** Nombre de presentación del juego. */
     private final String displayName;

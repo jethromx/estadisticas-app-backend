@@ -26,7 +26,7 @@ import java.util.regex.Pattern;
 public class ActivityLoggingFilter extends OncePerRequestFilter {
 
     private static final Pattern LOTTERY_TYPE_PATTERN =
-            Pattern.compile("/(MELATE|REVANCHA|REVANCHITA|GANA_GATO)/", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("/(MELATE|REVANCHA|REVANCHITA)/", Pattern.CASE_INSENSITIVE);
 
     private final UserActivityRepositoryPort activityRepository;
 

@@ -93,9 +93,9 @@ class GetHotNumbersServiceTest {
     @Test
     @DisplayName("getRecentHotNumbers con lista vacía devuelve lista vacía")
     void getRecentHotNumbers_emptyDraws_returnsEmpty() {
-        when(repositoryPort.findRecentByType(LotteryType.GANA_GATO, 5)).thenReturn(List.of());
+        when(repositoryPort.findRecentByType(LotteryType.MELATE, 5)).thenReturn(List.of());
 
-        List<NumberFrequency> result = service.getRecentHotNumbers(LotteryType.GANA_GATO, 5, 3);
+        List<NumberFrequency> result = service.getRecentHotNumbers(LotteryType.MELATE, 5, 3);
 
         assertThat(result).isEmpty();
     }
