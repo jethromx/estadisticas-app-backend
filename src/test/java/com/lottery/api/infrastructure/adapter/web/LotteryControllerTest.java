@@ -53,6 +53,15 @@ class LotteryControllerTest {
     @MockBean private GetBacktestUseCase backtestUseCase;
     @MockBean private GetBayesianAnalysisUseCase bayesianAnalysisUseCase;
     @MockBean private GetDrawResultsUseCase drawResultsUseCase;
+    @MockBean private GetPositionAnalysisUseCase positionAnalysisUseCase;
+    @MockBean private GetConsecutiveAnalysisUseCase consecutiveAnalysisUseCase;
+    @MockBean private GetRichBacktestUseCase richBacktestUseCase;
+    @MockBean private GetTemporalWeightUseCase temporalWeightUseCase;
+    @MockBean private GetEntropyAnalysisUseCase entropyAnalysisUseCase;
+    @MockBean private GetClusterAnalysisUseCase clusterAnalysisUseCase;
+    @MockBean private GetSumStreakUseCase sumStreakUseCase;
+    @MockBean private GetEnsemblePredictionUseCase ensemblePredictionUseCase;
+    @MockBean private GetCalendarFrequencyUseCase calendarFrequencyUseCase;
     @MockBean private LotteryWebMapper webMapper;
     // Security: mock dependencies of filters, not the filters themselves
     // (mocking filters stops chain.doFilter() from being called)

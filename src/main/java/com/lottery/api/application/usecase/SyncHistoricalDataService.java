@@ -41,9 +41,18 @@ public class SyncHistoricalDataService implements SyncHistoricalDataUseCase {
         @CacheEvict(value = "analysis-windowed", allEntries = true),
         @CacheEvict(value = "analysis-pairs",    allEntries = true),
         @CacheEvict(value = "analysis-chi",      allEntries = true),
-        @CacheEvict(value = "analysis-backtest", allEntries = true),
-        @CacheEvict(value = "analysis-bayesian", allEntries = true),
-        @CacheEvict(value = "draws",             allEntries = true),
+        @CacheEvict(value = "analysis-backtest",      allEntries = true),
+        @CacheEvict(value = "analysis-bayesian",      allEntries = true),
+        @CacheEvict(value = "draws",                  allEntries = true),
+        @CacheEvict(value = "analysis-position",      allEntries = true),
+        @CacheEvict(value = "analysis-consecutive",   allEntries = true),
+        @CacheEvict(value = "analysis-rich-backtest", allEntries = true),
+        @CacheEvict(value = "analysis-temporal",      allEntries = true),
+        @CacheEvict(value = "analysis-entropy",       allEntries = true),
+        @CacheEvict(value = "analysis-cluster",       allEntries = true),
+        @CacheEvict(value = "analysis-streak",        allEntries = true),
+        @CacheEvict(value = "analysis-ensemble",      allEntries = true),
+        @CacheEvict(value = "analysis-calendar",      allEntries = true),
     })
     public SyncResult syncHistoricalData(LotteryType lotteryType) {
         log.info("Iniciando sincronización para: {}", lotteryType);

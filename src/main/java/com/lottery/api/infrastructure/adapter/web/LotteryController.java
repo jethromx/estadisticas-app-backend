@@ -55,6 +55,15 @@ public class LotteryController {
     private final GetBacktestUseCase              backtestUseCase;
     private final GetBayesianAnalysisUseCase      bayesianAnalysisUseCase;
     private final GetDrawResultsUseCase           drawResultsUseCase;
+    private final GetPositionAnalysisUseCase      positionAnalysisUseCase;
+    private final GetConsecutiveAnalysisUseCase   consecutiveAnalysisUseCase;
+    private final GetRichBacktestUseCase          richBacktestUseCase;
+    private final GetTemporalWeightUseCase        temporalWeightUseCase;
+    private final GetEntropyAnalysisUseCase       entropyAnalysisUseCase;
+    private final GetClusterAnalysisUseCase       clusterAnalysisUseCase;
+    private final GetSumStreakUseCase             sumStreakUseCase;
+    private final GetEnsemblePredictionUseCase    ensemblePredictionUseCase;
+    private final GetCalendarFrequencyUseCase     calendarFrequencyUseCase;
     private final LotteryWebMapper                webMapper;
 
     // =========================================================================
@@ -375,6 +384,142 @@ public class LotteryController {
                         .stream()
                         .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()))
                         .toList());
+    }
+
+    // =========================================================================
+    // Análisis de posición ordenada
+    // =========================================================================
+
+    @GetMapping("/{type}/position-analysis")
+    @Operation(summary = "Análisis de brechas por posición ordenada",
+               description = "Para cada posición (1ª, 2ª… Nª número más pequeño del sorteo) muestra " +
+                             "la distribución histórica: media, desviación, percentiles y rango recomendado.")
+    public ResponseEntity<PositionAnalysisResponse> getPositionAnalysis(@PathVariable String type) {
+        return ResponseEntity.ok(webMapper.toResponse(positionAnalysisUseCase.getPositionAnalysis(parseLotteryType(type))));
+    }
+
+    // =========================================================================
+    // Análisis de números consecutivos
+    // =========================================================================
+
+    @GetMapping("/{type}/consecutive-analysis")
+    @Operation(summary = "Análisis de números consecutivos",
+               description = "Frecuencia de sorteos con pares consecutivos (n, n+1), distribución " +
+                             "por cantidad de pares por sorteo y los pares más comunes.")
+    public ResponseEntity<ConsecutiveAnalysisResponse> getConsecutiveAnalysis(
+            @PathVariable String type,
+            @RequestParam(defaultValue = "20") @Min(5) @Max(100) int topPairs) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                consecutiveAnalysisUseCase.getConsecutiveAnalysis(parseLotteryType(type), topPairs)));
+    }
+
+    // =========================================================================
+    // Backtest multi-estrategia (rico)
+    // =========================================================================
+
+    @GetMapping("/{type}/rich-backtest")
+    @Operation(summary = "Backtest multi-estrategia",
+               description = "Compara simultáneamente las estrategias HOT_NUMBERS, COLD_NUMBERS, " +
+                             "DUE_NUMBERS y BALANCED en los sorteos de prueba. Incluye hit-rate, " +
+                             "promedio de aciertos, comparativa vs azar y rolling hit-rate por ventana.")
+    public ResponseEntity<RichBacktestResponse> getRichBacktest(
+            @PathVariable String type,
+            @RequestParam(required = false) @Min(1) @Max(56) Integer topK,
+            @RequestParam(defaultValue = "100") @Min(10) @Max(2000) int testDraws) {
+        LotteryType lotteryType = parseLotteryType(type);
+        int k = topK != null ? topK : lotteryType.getNumbersCount();
+        return ResponseEntity.ok(webMapper.toResponse(richBacktestUseCase.getRichBacktest(lotteryType, k, testDraws)));
+    }
+
+    // =========================================================================
+    // Pesos temporales (decay exponencial)
+    // =========================================================================
+
+    @GetMapping("/{type}/temporal-weights")
+    @Operation(summary = "Calibración de pesos por ventana temporal",
+               description = "Calcula el score ponderado exponencialmente de cada número con factores " +
+                             "de decay 0.99, 0.97, 0.95 y 0.90. Permite comparar ranking actual vs " +
+                             "ranking histórico puro.")
+    public ResponseEntity<TemporalWeightResponse> getTemporalWeights(@PathVariable String type) {
+        return ResponseEntity.ok(webMapper.toResponse(temporalWeightUseCase.getTemporalWeights(parseLotteryType(type))));
+    }
+
+    // =========================================================================
+    // Análisis de entropía
+    // =========================================================================
+
+    @GetMapping("/{type}/entropy-analysis")
+    @Operation(summary = "Análisis de entropía de Shannon",
+               description = "Mide si la distribución histórica es estadísticamente uniforme (aleatoria). " +
+                             "entropyRatio cercano a 1.0 = muy uniforme, sin sesgo detectable. " +
+                             "Incluye entropía por ventana de sorteos para ver tendencias temporales.")
+    public ResponseEntity<EntropyAnalysisResponse> getEntropyAnalysis(
+            @PathVariable String type,
+            @RequestParam(defaultValue = "50") @Min(20) @Max(500) int windowSize) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                entropyAnalysisUseCase.getEntropyAnalysis(parseLotteryType(type), windowSize)));
+    }
+
+    // =========================================================================
+    // Clustering de combinaciones ganadoras
+    // =========================================================================
+
+    @GetMapping("/{type}/cluster-analysis")
+    @Operation(summary = "Clusters de combinaciones ganadoras",
+               description = "Agrupa los sorteos históricos en k clusters usando K-Means sobre " +
+                             "(suma, cantidad de impares, amplitud). Cada cluster muestra sus números " +
+                             "más frecuentes y qué porcentaje del histórico representa.")
+    public ResponseEntity<ClusterAnalysisResponse> getClusterAnalysis(
+            @PathVariable String type,
+            @RequestParam(defaultValue = "5") @Min(2) @Max(10) int k) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                clusterAnalysisUseCase.getClusterAnalysis(parseLotteryType(type), k)));
+    }
+
+    // =========================================================================
+    // Racha de sumas (streak analysis)
+    // =========================================================================
+
+    @GetMapping("/{type}/sum-streak")
+    @Operation(summary = "Análisis de rachas de sumas",
+               description = "Detecta rachas consecutivas de sorteos con suma total por encima o por " +
+                             "debajo de la media histórica. Muestra la racha actual, las más largas y " +
+                             "el detalle de los últimos sorteos.")
+    public ResponseEntity<SumStreakResponse> getSumStreak(
+            @PathVariable String type,
+            @RequestParam(defaultValue = "30") @Min(10) @Max(200) int recentDraws) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                sumStreakUseCase.getSumStreak(parseLotteryType(type), recentDraws)));
+    }
+
+    // =========================================================================
+    // Predicción ensemble (ML ponderado)
+    // =========================================================================
+
+    @GetMapping("/{type}/ensemble-prediction")
+    @Operation(summary = "Predicción ensemble estadístico (ML)",
+               description = "Combina cuatro señales (frecuencia histórica, recencia exponencial, " +
+                             "due-score y co-ocurrencia de pares) en un modelo lineal cuyos pesos " +
+                             "se optimizan por grid-search validado en los últimos sorteos. " +
+                             "Devuelve los números más probables y 5 combinaciones sugeridas.")
+    public ResponseEntity<EnsemblePredictionResponse> getEnsemblePrediction(
+            @PathVariable String type,
+            @RequestParam(defaultValue = "30") @Min(10) @Max(200) int validationDraws) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                ensemblePredictionUseCase.getEnsemblePrediction(parseLotteryType(type), validationDraws)));
+    }
+
+    // =========================================================================
+    // Frecuencia por día de la semana / mes
+    // =========================================================================
+
+    @GetMapping("/{type}/calendar-frequency")
+    @Operation(summary = "Frecuencia por día de semana y mes",
+               description = "Muestra qué números aparecen más en cada día de la semana y en cada mes " +
+                             "del año, útil para detectar sesgos calendariales en el histórico.")
+    public ResponseEntity<CalendarFrequencyResponse> getCalendarFrequency(@PathVariable String type) {
+        return ResponseEntity.ok(webMapper.toResponse(
+                calendarFrequencyUseCase.getCalendarFrequency(parseLotteryType(type))));
     }
 
     // =========================================================================
