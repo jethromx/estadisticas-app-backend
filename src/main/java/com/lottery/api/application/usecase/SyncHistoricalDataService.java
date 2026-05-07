@@ -8,6 +8,8 @@ import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import com.lottery.api.domain.port.out.LotteryHistoricalDownloaderPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +34,17 @@ public class SyncHistoricalDataService implements SyncHistoricalDataUseCase {
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Caching(evict = {
+        @CacheEvict(value = "analysis-due",      allEntries = true),
+        @CacheEvict(value = "analysis-sum",      allEntries = true),
+        @CacheEvict(value = "analysis-balance",  allEntries = true),
+        @CacheEvict(value = "analysis-windowed", allEntries = true),
+        @CacheEvict(value = "analysis-pairs",    allEntries = true),
+        @CacheEvict(value = "analysis-chi",      allEntries = true),
+        @CacheEvict(value = "analysis-backtest", allEntries = true),
+        @CacheEvict(value = "analysis-bayesian", allEntries = true),
+        @CacheEvict(value = "draws",             allEntries = true),
+    })
     public SyncResult syncHistoricalData(LotteryType lotteryType) {
         log.info("Iniciando sincronización para: {}", lotteryType);
         try {

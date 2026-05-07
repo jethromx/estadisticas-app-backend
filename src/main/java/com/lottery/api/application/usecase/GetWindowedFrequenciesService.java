@@ -6,6 +6,7 @@ import com.lottery.api.domain.model.WindowedFrequency;
 import com.lottery.api.domain.port.in.GetWindowedFrequenciesUseCase;
 import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ public class GetWindowedFrequenciesService implements GetWindowedFrequenciesUseC
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Cacheable(value = "analysis-windowed", key = "#lotteryType.name() + '-' + #windowSize")
     @Transactional(readOnly = true)
     public List<WindowedFrequency> getWindowedFrequencies(LotteryType lotteryType, int windowSize) {
         long totalDraws = repositoryPort.countByType(lotteryType);

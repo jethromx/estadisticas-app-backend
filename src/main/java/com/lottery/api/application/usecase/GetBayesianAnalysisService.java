@@ -6,6 +6,7 @@ import com.lottery.api.domain.model.NumberFrequency;
 import com.lottery.api.domain.port.in.GetBayesianAnalysisUseCase;
 import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class GetBayesianAnalysisService implements GetBayesianAnalysisUseCase {
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Cacheable(value = "analysis-bayesian", key = "#type.name() + '-' + #recentWindow")
     @Transactional(readOnly = true)
     public List<BayesianNumber> getBayesianAnalysis(LotteryType type, int recentWindow) {
         List<NumberFrequency> historicalFreqs = repositoryPort.getNumberFrequencies(type);

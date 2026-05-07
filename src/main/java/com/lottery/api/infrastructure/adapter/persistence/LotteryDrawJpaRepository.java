@@ -8,6 +8,8 @@ import com.lottery.api.infrastructure.adapter.persistence.projection.NumberFrequ
 import com.lottery.api.infrastructure.adapter.persistence.projection.PairFrequencyProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.SumHistogramProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.SumStatsProjection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -43,6 +45,9 @@ public interface LotteryDrawJpaRepository extends JpaRepository<LotteryDrawEntit
     List<LotteryDrawEntity> findRecentByType(
             @Param("type") String type,
             @Param("limit") int limit);
+
+    @Query("SELECT d FROM LotteryDrawEntity d WHERE d.lotteryType = :type ORDER BY d.drawNumber DESC")
+    Page<LotteryDrawEntity> findPageableByType(@Param("type") LotteryType type, Pageable pageable);
 
     long countByLotteryType(LotteryType type);
 

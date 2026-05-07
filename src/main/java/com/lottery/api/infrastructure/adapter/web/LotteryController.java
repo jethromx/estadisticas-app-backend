@@ -14,6 +14,9 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -347,14 +350,28 @@ public class LotteryController {
 
     @GetMapping("/{type}/draws")
     @Operation(summary = "Histórico de sorteos",
-               description = "Devuelve los sorteos más recientes con sus números principales, " +
-                             "útil para verificar si una combinación ya fue sorteada.")
-    public ResponseEntity<List<DrawResultResponse>> getDraws(
+               description = "Sin parámetros de página devuelve todos los sorteos (hasta `limit`). " +
+                             "Con `page` y `size` devuelve una página con metadatos de paginación.")
+    public ResponseEntity<?> getDraws(
             @PathVariable String type,
-            @Parameter(description = "Máximo de sorteos a retornar (default 5000)")
-            @RequestParam(defaultValue = "5000") @Min(1) @Max(10000) int limit) {
+            @Parameter(description = "Máximo de sorteos en modo sin paginación (default 5000)")
+            @RequestParam(defaultValue = "5000") @Min(1) @Max(10000) int limit,
+            @Parameter(description = "Número de página base-0 (activa paginación)")
+            @RequestParam(required = false) @Min(0) Integer page,
+            @Parameter(description = "Tamaño de página (default 100, máx 500)")
+            @RequestParam(defaultValue = "100") @Min(1) @Max(500) int size) {
+
+        LotteryType lotteryType = parseLotteryType(type);
+
+        if (page != null) {
+            Page<DrawResultResponse> result = drawResultsUseCase
+                    .executePaged(lotteryType, PageRequest.of(page, size, Sort.by("drawNumber").descending()))
+                    .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()));
+            return ResponseEntity.ok(result);
+        }
+
         return ResponseEntity.ok(
-                drawResultsUseCase.execute(parseLotteryType(type), limit)
+                drawResultsUseCase.execute(lotteryType, limit)
                         .stream()
                         .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()))
                         .toList());

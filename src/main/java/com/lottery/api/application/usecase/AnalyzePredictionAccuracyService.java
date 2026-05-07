@@ -50,9 +50,10 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
             throw new UnauthorizedPredictionAccessException();
         }
 
-        LotteryType lotteryType = prediction.getLotteryType() != null
-                ? prediction.getLotteryType()
-                : LotteryType.MELATE;
+        if (prediction.getLotteryType() == null) {
+            throw new IllegalStateException("La predicción no tiene tipo de lotería asignado");
+        }
+        LotteryType lotteryType = prediction.getLotteryType();
 
         if (syncFirst) {
             try {

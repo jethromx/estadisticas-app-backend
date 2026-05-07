@@ -61,6 +61,10 @@ dependencies {
     // Parseo de CSV
     implementation "com.opencsv:opencsv:${opencsvVersion}"
 
+    // Caché
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'com.github.ben-manes.caffeine:caffeine'
+
     // Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
 

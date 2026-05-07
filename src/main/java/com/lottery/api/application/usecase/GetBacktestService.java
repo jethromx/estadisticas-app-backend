@@ -7,6 +7,7 @@ import com.lottery.api.domain.model.NumberFrequency;
 import com.lottery.api.domain.port.in.GetBacktestUseCase;
 import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,6 +24,7 @@ public class GetBacktestService implements GetBacktestUseCase {
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Cacheable(value = "analysis-backtest", key = "#type.name() + '-' + #topK + '-' + #testDraws")
     @Transactional(readOnly = true)
     public BacktestResult getBacktest(LotteryType type, int topK, int testDraws) {
         List<NumberFrequency> freqs = repositoryPort.getNumberFrequencies(type);

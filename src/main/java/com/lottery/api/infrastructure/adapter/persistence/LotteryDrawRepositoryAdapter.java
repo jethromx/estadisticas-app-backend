@@ -13,6 +13,8 @@ import com.lottery.api.infrastructure.adapter.persistence.projection.BalanceProj
 import com.lottery.api.infrastructure.adapter.persistence.projection.SumHistogramProjection;
 import com.lottery.api.infrastructure.adapter.persistence.projection.SumStatsProjection;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -73,6 +75,11 @@ public class LotteryDrawRepositoryAdapter implements LotteryDrawRepositoryPort {
     @Override
     public List<LotteryDraw> findRecentByType(LotteryType type, int limit) {
         return mapper.toDomainList(jpaRepository.findRecentByType(type.name(), limit));
+    }
+
+    @Override
+    public Page<LotteryDraw> findByTypePageable(LotteryType type, Pageable pageable) {
+        return jpaRepository.findPageableByType(type, pageable).map(mapper::toDomain);
     }
 
     @Override

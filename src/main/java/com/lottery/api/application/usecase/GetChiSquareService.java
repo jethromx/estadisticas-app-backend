@@ -7,6 +7,7 @@ import com.lottery.api.domain.model.NumberFrequency;
 import com.lottery.api.domain.port.in.GetChiSquareUseCase;
 import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,7 @@ public class GetChiSquareService implements GetChiSquareUseCase {
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Cacheable(value = "analysis-chi", key = "#type.name()")
     @Transactional(readOnly = true)
     public ChiSquareResult getChiSquare(LotteryType type) {
         List<NumberFrequency> freqs = repositoryPort.getNumberFrequencies(type);

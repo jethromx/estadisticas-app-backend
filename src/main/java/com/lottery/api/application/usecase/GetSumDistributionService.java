@@ -5,6 +5,7 @@ import com.lottery.api.domain.model.SumDistribution;
 import com.lottery.api.domain.port.in.GetSumDistributionUseCase;
 import com.lottery.api.domain.port.out.LotteryDrawRepositoryPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ public class GetSumDistributionService implements GetSumDistributionUseCase {
     private final LotteryDrawRepositoryPort repositoryPort;
 
     @Override
+    @Cacheable(value = "analysis-sum", key = "#lotteryType.name()")
     @Transactional(readOnly = true)
     public SumDistribution getSumDistribution(LotteryType lotteryType) {
         return repositoryPort.getSumDistribution(lotteryType);
