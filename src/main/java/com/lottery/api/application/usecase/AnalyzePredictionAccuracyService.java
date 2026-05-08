@@ -50,10 +50,14 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
             throw new UnauthorizedPredictionAccessException();
         }
 
-        if (prediction.getLotteryType() == null) {
-            throw new IllegalStateException("La predicción no tiene tipo de lotería asignado");
-        }
         LotteryType lotteryType = prediction.getLotteryType();
+        if (lotteryType == null) {
+            lotteryType = inferLotteryType(prediction.getLabel());
+        }
+        if (lotteryType == null) {
+            throw new IllegalStateException(
+                "Esta predicción fue guardada sin tipo de lotería. Elimínala y genera una nueva desde el juego correspondiente.");
+        }
 
         if (syncFirst) {
             try {
@@ -189,6 +193,15 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
         }
 
         return suggestions;
+    }
+
+    private LotteryType inferLotteryType(String label) {
+        if (label == null) return null;
+        String upper = label.toUpperCase();
+        if (upper.contains("REVANCHITA")) return LotteryType.REVANCHITA;
+        if (upper.contains("REVANCHA"))   return LotteryType.REVANCHA;
+        if (upper.contains("MELATE"))     return LotteryType.MELATE;
+        return null;
     }
 
     private List<List<Integer>> parseCombos(String combosJson) {

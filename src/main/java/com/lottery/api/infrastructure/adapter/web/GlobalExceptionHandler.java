@@ -65,6 +65,12 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex) {
+        log.warn("Estado inválido: {}", ex.getMessage());
+        return buildResponse(HttpStatus.UNPROCESSABLE_ENTITY, ex.getMessage());
+    }
+
     @ExceptionHandler(CsvParsingException.class)
     public ResponseEntity<ApiError> handleCsvParsing(CsvParsingException ex) {
         log.error("Error al parsear CSV: {}", ex.getMessage(), ex);
