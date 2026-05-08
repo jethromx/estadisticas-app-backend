@@ -51,9 +51,8 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
         }
 
         LotteryType lotteryType = prediction.getLotteryType();
-        if (lotteryType == null) {
-            lotteryType = inferLotteryType(prediction.getLabel());
-        }
+        if (lotteryType == null) lotteryType = inferLotteryType(prediction.getLabel());
+        if (lotteryType == null) lotteryType = inferFromGenerationParams(prediction.getGenerationParamsJson());
         if (lotteryType == null) {
             throw new IllegalStateException(
                 "Esta predicción fue guardada sin tipo de lotería. Elimínala y genera una nueva desde el juego correspondiente.");
@@ -201,6 +200,21 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
         if (upper.contains("REVANCHITA")) return LotteryType.REVANCHITA;
         if (upper.contains("REVANCHA"))   return LotteryType.REVANCHA;
         if (upper.contains("MELATE"))     return LotteryType.MELATE;
+        return null;
+    }
+
+    private LotteryType inferFromGenerationParams(String paramsJson) {
+        if (paramsJson == null) return null;
+        try {
+            com.fasterxml.jackson.databind.JsonNode root = objectMapper.readTree(paramsJson);
+            com.fasterxml.jackson.databind.JsonNode games = root.get("games");
+            if (games != null && games.isArray() && games.size() > 0) {
+                String first = games.get(0).asText().toUpperCase();
+                return LotteryType.valueOf(first);
+            }
+        } catch (Exception e) {
+            log.debug("No se pudo inferir lotteryType de generationParams: {}", e.getMessage());
+        }
         return null;
     }
 
