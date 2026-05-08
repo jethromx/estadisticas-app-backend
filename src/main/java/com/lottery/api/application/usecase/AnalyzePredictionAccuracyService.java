@@ -54,8 +54,8 @@ public class AnalyzePredictionAccuracyService implements AnalyzePredictionAccura
         if (lotteryType == null) lotteryType = inferLotteryType(prediction.getLabel());
         if (lotteryType == null) lotteryType = inferFromGenerationParams(prediction.getGenerationParamsJson());
         if (lotteryType == null) {
-            throw new IllegalStateException(
-                "Esta predicción fue guardada sin tipo de lotería. Elimínala y genera una nueva desde el juego correspondiente.");
+            log.info("Predicción {} sin lotteryType, usando MELATE como fallback", predictionId);
+            lotteryType = LotteryType.MELATE;
         }
 
         if (syncFirst) {
