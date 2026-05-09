@@ -4,9 +4,12 @@ import com.lottery.api.domain.model.SavedPrediction;
 import com.lottery.api.domain.port.out.SavedPredictionRepositoryPort;
 import com.lottery.api.infrastructure.adapter.persistence.entity.SavedPredictionEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Component
@@ -42,8 +45,23 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
     }
 
     @Override
+    public Page<SavedPrediction> findByUserIdPaged(String userId, Pageable pageable) {
+        return jpaRepository.findByUserIdOrderBySavedAtDesc(userId, pageable)
+                .map(this::toDomain);
+    }
+
+    @Override
     public void deleteById(String id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public SavedPrediction toggleFavorite(String id, String userId) {
+        SavedPredictionEntity entity = jpaRepository.findById(id)
+                .filter(e -> Objects.equals(userId, e.getUserId()))
+                .orElseThrow(() -> new IllegalArgumentException("Prediction not found: " + id));
+        entity.setFavorite(!entity.isFavorite());
+        return toDomain(jpaRepository.save(entity));
     }
 
     private SavedPredictionEntity toEntity(SavedPrediction p) {
@@ -56,6 +74,7 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
                 .lotteryType(p.getLotteryType())
                 .generationParamsJson(p.getGenerationParamsJson())
                 .userId(p.getUserId())
+                .favorite(p.isFavorite())
                 .build();
     }
 
@@ -69,6 +88,7 @@ public class SavedPredictionRepositoryAdapter implements SavedPredictionReposito
                 .lotteryType(e.getLotteryType())
                 .generationParamsJson(e.getGenerationParamsJson())
                 .userId(e.getUserId())
+                .favorite(e.isFavorite())
                 .build();
     }
 }

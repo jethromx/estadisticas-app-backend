@@ -10,8 +10,10 @@ import com.lottery.api.domain.port.in.AnalyzePredictionAccuracyUseCase;
 import com.lottery.api.domain.port.in.DeletePredictionUseCase;
 import com.lottery.api.domain.port.in.GetPredictionsUseCase;
 import com.lottery.api.domain.port.in.SavePredictionUseCase;
+import com.lottery.api.domain.port.in.ToggleFavoritePredictionUseCase;
 import com.lottery.api.infrastructure.adapter.web.dto.request.SavePredictionRequest;
 import com.lottery.api.infrastructure.adapter.web.dto.response.ComboMatchDetailResponse;
+import com.lottery.api.infrastructure.adapter.web.dto.response.PagedResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.PredictionAccuracyResponse;
 import com.lottery.api.infrastructure.adapter.web.dto.response.SavedPredictionResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,12 +22,16 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -48,17 +54,36 @@ public class PredictionController {
     private final GetPredictionsUseCase getPredictionsUseCase;
     private final DeletePredictionUseCase deletePredictionUseCase;
     private final AnalyzePredictionAccuracyUseCase analyzePredictionAccuracyUseCase;
+    private final ToggleFavoritePredictionUseCase toggleFavoritePredictionUseCase;
     private final ObjectMapper objectMapper;
 
-    @Operation(summary = "Listar predicciones del usuario autenticado")
+    @Operation(summary = "Listar predicciones del usuario autenticado (paginado)")
     @GetMapping
-    public ResponseEntity<List<SavedPredictionResponse>> getAll(Authentication auth) {
+    public ResponseEntity<PagedResponse<SavedPredictionResponse>> getAll(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            Authentication auth) {
         String userId = extractUserId(auth);
-        List<SavedPredictionResponse> body = getPredictionsUseCase.execute(userId)
-                .stream()
-                .map(this::toResponse)
-                .toList();
-        return ResponseEntity.ok(body);
+        PageRequest pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "savedAt"));
+        Page<SavedPredictionResponse> result = getPredictionsUseCase.executePaged(userId, pageable)
+                .map(this::toResponse);
+        return ResponseEntity.ok(new PagedResponse<>(
+                result.getContent(),
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages()
+        ));
+    }
+
+    @Operation(summary = "Marcar o desmarcar predicción como favorita")
+    @PatchMapping("/{id}/favorite")
+    public ResponseEntity<SavedPredictionResponse> toggleFavorite(
+            @PathVariable String id,
+            Authentication auth) {
+        String userId = extractUserId(auth);
+        SavedPrediction updated = toggleFavoritePredictionUseCase.execute(id, userId);
+        return ResponseEntity.ok(toResponse(updated));
     }
 
     @Operation(summary = "Guardar una predicción")
@@ -123,7 +148,8 @@ public class PredictionController {
                 combosNode,
                 p.getLotteryType() != null ? p.getLotteryType().name() : null,
                 paramsNode,
-                p.getUserId()
+                p.getUserId(),
+                p.isFavorite()
         );
     }
 

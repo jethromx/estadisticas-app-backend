@@ -21,4 +21,5 @@ public class SavedPrediction {
     private LotteryType lotteryType;
     private String generationParamsJson;
     private String userId;
+    private boolean favorite;
 }

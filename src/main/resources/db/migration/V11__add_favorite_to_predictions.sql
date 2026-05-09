@@ -1,0 +1,1 @@
+ALTER TABLE saved_predictions ADD COLUMN favorite BOOLEAN NOT NULL DEFAULT FALSE;

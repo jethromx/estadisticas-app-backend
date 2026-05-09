@@ -52,6 +52,9 @@ public class SavedPredictionEntity {
     @Column(name = "user_id")
     private String userId;
 
+    @Column(name = "favorite", nullable = false, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private boolean favorite;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

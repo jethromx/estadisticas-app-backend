@@ -10,5 +10,6 @@ public record SavedPredictionResponse(
         JsonNode combos,
         String lotteryType,
         JsonNode generationParams,
-        String userId
+        String userId,
+        boolean favorite
 ) {}
