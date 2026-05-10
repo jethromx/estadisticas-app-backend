@@ -375,14 +375,14 @@ public class LotteryController {
         if (page != null) {
             Page<DrawResultResponse> result = drawResultsUseCase
                     .executePaged(lotteryType, PageRequest.of(page, size, Sort.by("drawNumber").descending()))
-                    .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()));
+                    .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers(), d.getJackpotAmount(), d.getFirstPrizeWinners()));
             return ResponseEntity.ok(result);
         }
 
         return ResponseEntity.ok(
                 drawResultsUseCase.execute(lotteryType, limit)
                         .stream()
-                        .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers()))
+                        .map(d -> new DrawResultResponse(d.getDrawNumber(), d.getDrawDate(), d.getNumbers(), d.getJackpotAmount(), d.getFirstPrizeWinners()))
                         .toList());
     }
 

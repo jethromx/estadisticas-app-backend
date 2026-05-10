@@ -1,10 +1,13 @@
 package com.lottery.api.infrastructure.adapter.web.dto.response;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
 public record DrawResultResponse(
         Integer drawNumber,
         LocalDate drawDate,
-        List<Integer> numbers
+        List<Integer> numbers,
+        BigDecimal jackpotAmount,
+        Integer firstPrizeWinners
 ) {}
